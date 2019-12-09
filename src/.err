@@ -1,0 +1,8 @@
+
+; Multi2Sim 3.3 - A Simulation Framework for CPU-GPU Heterogeneous Computing
+; Please use command 'm2s --help' for a list of command-line options.
+; Last compilation: May 18 2012 11:23:11
+
+fatal: '--net-' is not a valid command-line option.
+Please type 'm2s --help' for a list of valid Multi2Sim command-line options.
+
