@@ -1849,6 +1849,10 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	int hit = 1;
 	int hit_set = 0;
 	int miss_set = 0;
+	int acc = 0;
+	int aux = 0;
+	int desp_menor = 999999;
+	int header_lec = 0;
 
 
 	const int thread_id = stack->client_info->core * x86_cpu_num_threads + stack->client_info->thread;
@@ -1932,7 +1936,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		struct mod_port_t *port = stack->port;
 		struct dir_lock_t *dir_lock;
 		//struct cache_block_t *block_lru;
-		int aux = 0;
+		;
 
 		assert(stack->port);
 		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_time, stack->id,
@@ -2148,26 +2152,123 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		else
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency); /* Access latency */
 		/* Calculating header penalty, Hugo */
-                if(mod->level == 1 && mod->RTM  ){
-                                if(hit){
+                if(mod->level == 1 && mod->RTM  )
+		{
+			if(mod->RTM_type == 1)
+			{
+				if(hit)
+				{	
 					
-                                        aux = hit_set - mod->mod_last_used_set->last_used_set[stack->way];
-                                        aux = (aux>0)?(aux):(-aux);
-					mod->mod_last_used_set->last_used_set[stack->way] = hit_set;
-					mod->mod_last_used_set->added_cycles[stack->way][aux]++;
-					
-                                        //mod->mod_last_used_set->last_used_set  = hit_set;
-                                       // mod->mod_last_used_set->added_cycles[aux]++; 
-                                }
-                                else{
-                                        aux = miss_set - mod->mod_last_used_set->last_used_set[stack->way];
-                                        aux = (aux>0)?(aux):(-aux);
-                                        mod->mod_last_used_set->last_used_set[stack->way] = miss_set;
-                                        mod->mod_last_used_set->added_cycles[stack->way][aux]++;
+					acc = hit_set/(mod->cache->num_sets/mod->headers);
+					aux = hit_set - mod->RTM_data->headers_pos[acc];
+				}
+				else
+				{
+					acc = miss_set/(mod->cache->num_sets/mod->headers);
+                                        aux = miss_set - mod->RTM_data->headers_pos[acc];
+				}
+				if(aux >= 0)
+				{
+					mod->RTM_data->penalizations[aux] =  mod->RTM_data->penalizations[aux] + 1; 
+				}
+				else
+				{
+					 mod->RTM_data->penalizations[-aux] =  mod->RTM_data->penalizations[-acc] + 1;
+				}
+				for(int w = 0; w<mod->headers;w++)
+				{
+					mod->RTM_data->headers_pos[w] = mod->RTM_data->headers_pos[w] + aux;
+				}
+							
+				
+			}
+			if( mod->RTM_type == 2)
+			{
+				//TODO REvisar SE en base al nuevo evento
+				if(hit)
+                                {
 
+                                        acc = hit_set/(mod->cache->num_sets/mod->headers);
+                                        aux = hit_set - mod->RTM_data->headers_pos[acc];
                                 }
-                     
-                        }
+                                else
+                                {
+                                        acc = miss_set/(mod->cache->num_sets/mod->headers);
+                                        aux = miss_set - mod->RTM_data->headers_pos[acc];
+                                }
+				if(aux >= 0)
+                                {
+                                        mod->RTM_data->penalizations[aux] =  mod->RTM_data->penalizations[aux] + 1;    
+                                }
+                                else
+                                {
+                                	mod->RTM_data->penalizations[-aux] =  mod->RTM_data->penalizations[-acc] + 1;
+                                }
+				
+
+			}
+			if(mod->RTM_type == 3)
+			{
+				aux = mod->RTM_data->penalizations[0];
+				for(int w = 0; w<mod->headers;w++ )
+				{
+					
+					if(hit)
+					{
+						acc = aux - hit_set;
+					}	
+					else
+					{
+						acc = aux - miss_set;
+					}
+
+					acc = (acc>0)?(acc):(-acc);	
+					if(acc < desp_menor )
+					{
+						header_lec = w;			
+					}
+					aux = aux + 32;
+					if(aux > mod->cache->num_sets)
+					{
+						aux = aux - mod->cache->num_sets;
+					}
+					
+				}
+				acc = mod->RTM_data->penalizations[header_lec];
+				aux  = acc - hit_set;
+				if(aux >= 0)
+                                {
+
+                                        mod->RTM_data->penalizations[aux] =  mod->RTM_data->penalizations[aux] + 1;
+					
+                                }
+                                else
+                                {
+                                        mod->RTM_data->penalizations[-aux] =  mod->RTM_data->penalizations[-acc] + 1;
+                                }
+				for(int w = 0; w<mod->headers;w++)
+                                {
+					
+					if( (mod->RTM_data->headers_pos[w] + aux) > (mod->cache->num_sets - 1) )
+					{
+						mod->RTM_data->headers_pos[w] =  mod->RTM_data->headers_pos[w] + aux - mod->cache->num_sets -1;
+					}
+					else if( mod->RTM_data->headers_pos[w] + aux < 0) 
+					{
+						mod->RTM_data->headers_pos[w] = (mod->cache->num_sets - 1) + (mod->RTM_data->headers_pos[w] + aux);
+
+					}
+					else
+					{
+						mod->RTM_data->headers_pos[w] =  mod->RTM_data->headers_pos[w] + aux;
+					}
+                                        
+                                }				
+				
+			}
+		}
+
+		/* End of my code*/
 		return;
 	}
 	                      

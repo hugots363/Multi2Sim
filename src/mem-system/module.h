@@ -31,13 +31,25 @@ extern int EV_MOD_ADAPT_PREF;
 extern int max_mod_level;
 
 /* Hugo's */
-struct mod_last_used_set_t
+
+struct RTM_data_t
 {
-	int *last_used_set;
-	int **added_cycles;
+	int last_read_set;
+	int *headers_pos;
+	int *penalizations;
+}; 
 
-
-};
+extern enum RTM_type_t
+{
+        mod_RTM_type_invalid = 0,
+        mod_RTM_type_SL,
+        mod_RTM_type_SE,
+        mod_RTM_type_DL
+}RTM_type;
+ 
+extern char *mod_RTM_type_map[];
+//= {"Nulo","SL","SE","DL"};
+/* */
 
 
 struct mod_report_stack_t
@@ -178,6 +190,8 @@ struct mod_adapt_pref_stack_t
 	int last_choice;
 	long long *uinsts_per_core;
 };
+
+
 
 #define MOD_ACCESS_HASH_TABLE_SIZE  17
 
@@ -416,7 +430,10 @@ struct mod_t
 	/*Hugo RTM */
 	int RTM;
 	int mov_cabezal;
-	struct mod_last_used_set_t *mod_last_used_set;
+	int headers;	
+	struct RTM_data_t *RTM_data;
+	enum RTM_type_t RTM_type;
+	
 	
 };
 
@@ -471,6 +488,7 @@ void mod_client_info_free(struct mod_t *mod, struct mod_client_info_t *client_in
 void mod_recursive_reset_stats(struct mod_t *mod);
 void mod_reset_stats(struct mod_t *mod);
 
+
 /* Prefetch */
 int mod_find_pref_block(struct mod_t *mod, unsigned int addr, int *pref_stream_ptr, int* pref_slot_ptr);
 int mod_find_block_in_stream(struct mod_t *mod, unsigned int addr, int stream);
@@ -482,6 +500,6 @@ void mod_interval_report_init(struct mod_t *mod);
 void mod_interval_report(struct mod_t *mod);
 
 //Header penalization, Hugo
-struct mod_last_used_set_t *mod_last_used_set_create(int num_sets, int assoc);
-
+//struct mod_last_used_set_t *mod_last_used_set_create(int num_sets, int assoc);
+struct RTM_data_t *RTM_data_create(int num_sets, int readers);
 #endif

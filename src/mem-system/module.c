@@ -59,6 +59,8 @@ struct str_map_t mod_access_kind_map =
 	}
 };
 
+
+
 /* Event used for updating the state of adaptative prefetch policy */
 int EV_MOD_ADAPT_PREF;
 
@@ -70,35 +72,34 @@ int max_mod_level;
  * Public Functions
  */
 
-//Hugo creating last_used_set_create 
-struct mod_last_used_set_t *mod_last_used_set_create(int num_sets, int assoc)
-{	
 
-	struct mod_last_used_set_t *mod_last_used_set = xcalloc(1, sizeof(struct mod_last_used_set_t));
+//Hugo creating a 'catch-all' structure to work with RTM
+char *mod_RTM_type[] = {"Nulo","SL","SE","DL"};
+
+struct RTM_data_t *RTM_data_create(int num_sets, int readers)
+{
+	struct RTM_data_t *RTM_data = xcalloc(1,sizeof(struct RTM_data_t));
+
+	int last_read_set = 0;
+        int *headers_pos = xcalloc( readers,sizeof(int*));
+	int *penalizations = xcalloc((num_sets/readers), sizeof(int*));
 	
-	/* space */
-	//int **added_cycles = xcalloc(num_sets*assoc, sizeof(int));
-	int *last_used_set = xcalloc(assoc ,sizeof(int));
-	int **added_cycles = xcalloc(assoc ,sizeof(int*));
 
-	for(int i = 0; i < assoc    ;i++)
+	for(int i = 0; i<readers;i++)
 	{
-		//Edited
-		added_cycles[i] = xcalloc(num_sets,sizeof(int));
-		//added_cycles[i] = 0;
+		headers_pos[i] = (num_sets/readers)/2 -1 + (num_sets/readers)*i;
 	}
+	for(int i = 0; i < (num_sets/readers); i++ )
+	{
+		penalizations[i] = 0;
+	}
+	/* Pointers*/	
+	RTM_data->last_read_set = last_read_set;
+	RTM_data->headers_pos = headers_pos;
+	RTM_data->penalizations = penalizations;
 
-	for (int i = 0; i < assoc; i++)
-		for (int j = 0; j < num_sets; j++)
-			added_cycles[i][j] = 0;
-		
+	return RTM_data;
 
-	/* pointers */
-	mod_last_used_set->added_cycles = added_cycles;
-	mod_last_used_set->last_used_set = last_used_set;
-
-	/* return */
-	return mod_last_used_set;
 }
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
@@ -141,6 +142,9 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	mod->atd_intermisses_per_thread = xcalloc(x86_cpu_num_cores * x86_cpu_num_threads, sizeof(long long));
 
 	mod->mc_id = -1; /* By default */
+	/*Hugo initializating RTM_type*/
+	//mod->RTM_type = RTM_type;
+
 
 	return mod;
 }
@@ -215,9 +219,7 @@ void mod_free(struct mod_t *mod)
 	free(mod->atd_intramisses_per_thread);
 	free(mod->atd_intermisses_per_thread);
 	
-	//free last_used_set Hugo
-	//free(mod->mod_last_used_set->added_cycles);
-	//free(mod->mod_last_used_set->last_used_set);
+
 	free(mod);
 }
 
@@ -1183,13 +1185,16 @@ void mod_interval_report(struct mod_t *mod)
 	//Hugo adding MRU hits per module of cache and cycle penalties
 	
 	fprintf(stack->report_file, ",%lld", MRU_hits);
-	if(mod->RTM){
-		for(int i = 0; i<= mod->cache->assoc - 1 ;i++){
-			for(int j = 0; j <= mod->cache->num_sets - 1;j++){
-				fprintf(stack->report_file, ",%lld", (long long int) mod->mod_last_used_set->added_cycles[i][j]);
-			}
+	if(mod->RTM)  
+	{
+		printf("TODO: añadir printeos");
+
 		}
-	}
+		
+		//for(int j = 0; j <= mod->cache->num_sets/mod->readers  ;j++){
+                //                fprintf(stack->report_file, ",%lld", (long long int) mod->mod_last_used_set->added_cycles[i][j]);
+                  //      }
+	
 
 
 
