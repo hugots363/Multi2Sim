@@ -76,23 +76,30 @@ int max_mod_level;
 //Hugo creating a 'catch-all' structure to work with RTM
 char *mod_RTM_type[] = {"Nulo","SL","SE","DL"};
 
-struct RTM_data_t *RTM_data_create(int num_sets, int readers)
+struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 {
 	struct RTM_data_t *RTM_data = xcalloc(1,sizeof(struct RTM_data_t));
 
 	int last_read_set = 0;
-        int *headers_pos = xcalloc( readers,sizeof(int*));
-	int *penalizations = xcalloc((num_sets/readers), sizeof(int*));
+        int *headers_pos = xcalloc( headers,sizeof(int*));
+	int **penalizations = xcalloc(assoc, sizeof(int*));
 	
+	for(int i = 0; i < assoc    ;i++)
+	{
+		
+		penalizations[i] = xcalloc(num_sets,sizeof(int));
+		
+	}
 
-	for(int i = 0; i<readers;i++)
+	for(int i = 0; i<headers;i++)
 	{
-		headers_pos[i] = (num_sets/readers)/2 -1 + (num_sets/readers)*i;
+		headers_pos[i] = (num_sets/headers)/2 -1 + (num_sets/headers)*i;
 	}
-	for(int i = 0; i < (num_sets/readers); i++ )
-	{
-		penalizations[i] = 0;
-	}
+	
+	for (int i = 0; i < assoc; i++)
+		for (int j = 0; j < num_sets; j++)
+			penalizations[i][j] = 0;
+
 	/* Pointers*/	
 	RTM_data->last_read_set = last_read_set;
 	RTM_data->headers_pos = headers_pos;
@@ -1186,10 +1193,13 @@ void mod_interval_report(struct mod_t *mod)
 	
 	fprintf(stack->report_file, ",%lld", MRU_hits);
 	if(mod->RTM)  
-	{
-		printf("TODO: añadir printeos");
-
+	{	
+		for(int i = 0; i< mod->cache->assoc ;i++){
+			for(int j = 0; j < mod->cache->num_sets;j++){
+				fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->penalizations[i][j]);
+			}
 		}
+	}
 		
 		//for(int j = 0; j <= mod->cache->num_sets/mod->readers  ;j++){
                 //                fprintf(stack->report_file, ",%lld", (long long int) mod->mod_last_used_set->added_cycles[i][j]);

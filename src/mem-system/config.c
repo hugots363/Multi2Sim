@@ -1239,12 +1239,12 @@ static void mem_config_read_modules(struct config_t *config)
         	/*RTM variables */		
         	mod->RTM = RTM;
 
-		mod->RTM_type = config_read_enum(config, section, "RTM_Type", 0, mod_RTM_type_map, 3); 
+		mod->RTM_type = config_read_enum(config, section, "RTM_Type", 0, mod_RTM_type_map, 4); 
 		mod->headers = config_read_int(config, section, "headers", 0);
 
 		if (mod->RTM)
                 {
-                        mod->RTM_data = RTM_data_create(mod->cache->num_sets, mod->headers);
+                        mod->RTM_data = RTM_data_create(mod->cache->num_sets, mod->cache->assoc, mod->headers);
                 }
 		//End
 

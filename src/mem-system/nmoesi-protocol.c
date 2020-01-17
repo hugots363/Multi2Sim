@@ -1853,6 +1853,9 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	int aux = 0;
 	int desp_menor = 999999;
 	int header_lec = 0;
+	int sets_per_h = 0;
+	int desbordamiento = 0;
+	int desb_selec = 0;
 
 
 	const int thread_id = stack->client_info->core * x86_cpu_num_threads + stack->client_info->thread;
@@ -2154,26 +2157,27 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		/* Calculating header penalty, Hugo */
                 if(mod->level == 1 && mod->RTM  )
 		{
+			sets_per_h = mod->cache->num_sets/mod->headers;
 			if(mod->RTM_type == 1)
 			{
 				if(hit)
 				{	
 					
-					acc = hit_set/(mod->cache->num_sets/mod->headers);
+					acc = hit_set/sets_per_h;
 					aux = hit_set - mod->RTM_data->headers_pos[acc];
 				}
 				else
 				{
-					acc = miss_set/(mod->cache->num_sets/mod->headers);
+					acc = miss_set/sets_per_h;
                                         aux = miss_set - mod->RTM_data->headers_pos[acc];
 				}
 				if(aux >= 0)
 				{
-					mod->RTM_data->penalizations[aux] =  mod->RTM_data->penalizations[aux] + 1; 
+					mod->RTM_data->penalizations[stack->way][aux] = mod->RTM_data->penalizations[stack->way][aux] + 1; 
 				}
 				else
 				{
-					 mod->RTM_data->penalizations[-aux] =  mod->RTM_data->penalizations[-acc] + 1;
+					 mod->RTM_data->penalizations[stack->way][-aux] = mod->RTM_data->penalizations[stack->way][-aux] + 1;
 				}
 				for(int w = 0; w<mod->headers;w++)
 				{
@@ -2185,85 +2189,148 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			if( mod->RTM_type == 2)
 			{
 				//TODO REvisar SE en base al nuevo evento
-				if(hit)
+				 if(hit)
                                 {
 
-                                        acc = hit_set/(mod->cache->num_sets/mod->headers);
+                                        acc = hit_set/sets_per_h;
                                         aux = hit_set - mod->RTM_data->headers_pos[acc];
                                 }
                                 else
                                 {
-                                        acc = miss_set/(mod->cache->num_sets/mod->headers);
+                                        acc = miss_set/sets_per_h;
                                         aux = miss_set - mod->RTM_data->headers_pos[acc];
                                 }
-				if(aux >= 0)
+                                if(aux >= 0)
                                 {
-                                        mod->RTM_data->penalizations[aux] =  mod->RTM_data->penalizations[aux] + 1;    
+                                        mod->RTM_data->penalizations[stack->way][aux] = mod->RTM_data->penalizations[stack->way][aux] + 1;
+
                                 }
                                 else
                                 {
-                                	mod->RTM_data->penalizations[-aux] =  mod->RTM_data->penalizations[-acc] + 1;
-                                }
-				
+                                         mod->RTM_data->penalizations[stack->way][-aux] = mod->RTM_data->penalizations[stack->way][-aux] + 1;
+                                }				
 
 			}
 			if(mod->RTM_type == 3)
 			{
-				aux = mod->RTM_data->penalizations[0];
+				aux = mod->RTM_data->headers_pos[0];
 				for(int w = 0; w<mod->headers;w++ )
-				{
-					
+				{	
+					//Desbordamiento: 0->No hay 1->Desbordamiento superior 2->Desbordamiento inferior	
 					if(hit)
 					{
-						acc = aux - hit_set;
-					}	
+						acc = hit_set - aux;
+						acc = (acc>0)?(acc):(-acc);
+						//Aux
+						if(acc >  mod->cache->num_sets ){
+						assert( acc <= mod->cache->num_sets );
+						}
+						if(mod->cache->num_sets - aux +hit_set <acc  && mod->cache->num_sets - aux +hit_set >= 0){
+							acc = mod->cache->num_sets - aux +hit_set;
+						       	desbordamiento = 1;	
+						}
+						else if( - (aux -hit_set ) +mod->cache->num_sets +1 < acc  && -(aux -hit_set ) +mod->cache->num_sets +1  >=0){
+							acc =  - (aux -hit_set ) +mod->cache->num_sets +1;
+							desbordamiento = 2;
+						}
+						else{desbordamiento = 0;}
+					
+					}
+					
 					else
 					{
+						
 						acc = aux - miss_set;
-					}
+						acc = (acc>0)?(acc):(-acc);
+                                                if(mod->cache->num_sets - aux +miss_set <acc){
+                                                        acc = mod->cache->num_sets - aux +miss_set;
+							desbordamiento = 1;
 
-					acc = (acc>0)?(acc):(-acc);	
+                                                }
+						else if( - (aux - miss_set) +mod->cache->num_sets +1 < acc  && -(aux - miss_set ) +mod->cache->num_sets +1  >=0){
+                                                        acc =  - (aux -miss_set ) +mod->cache->num_sets +1;
+                                                        desbordamiento = 2;
+                                                }
+						else{desbordamiento = 0;}
+					}
+					assert(acc >= 0 && acc <= mod->cache->num_sets-1 );
+
+						
 					if(acc < desp_menor )
 					{
-						header_lec = w;			
+						header_lec = w;
+						desp_menor = acc;
+						desb_selec = desbordamiento;		
 					}
-					aux = aux + 32;
-					if(aux > mod->cache->num_sets)
+					aux = aux + sets_per_h;
+					if(aux >= mod->cache->num_sets)
 					{
 						aux = aux - mod->cache->num_sets;
 					}
 					
 				}
-				acc = mod->RTM_data->penalizations[header_lec];
-				aux  = acc - hit_set;
+				desp_menor = 9999;
+				acc = mod->RTM_data->headers_pos[header_lec];
+				//Tenemos en header_lec el cabezal más cercano, en acc la posicion de ese cabezal
+				if(hit)
+				{
+					if(desb_selec == 0){aux = hit_set - acc;}
+					else if(desb_selec == 2){aux = -(-hit_set+acc)+ mod->cache->num_sets; }
+					else{aux = mod->cache->num_sets-acc+hit_set; }
+					//assert(aux <= sets_per_h);
+				}
+				else
+				{
+					if(desb_selec == 0){aux = miss_set - acc;}
+					else if(desb_selec == 2){aux = -(-miss_set+acc)+ mod->cache->num_sets; }
+                                        else{aux = mod->cache->num_sets-acc+miss_set; }
+                                        //assert(aux <= sets_per_h);
+				}
 				if(aux >= 0)
                                 {
-
-                                        mod->RTM_data->penalizations[aux] =  mod->RTM_data->penalizations[aux] + 1;
+					assert(aux >= 0 && aux < mod->cache->num_sets);
+                                        mod->RTM_data->penalizations[stack->way][aux] =  mod->RTM_data->penalizations[stack->way][aux] + 1;
 					
                                 }
                                 else
                                 {
-                                        mod->RTM_data->penalizations[-aux] =  mod->RTM_data->penalizations[-acc] + 1;
+					assert(-aux >= 0 && -aux < mod->cache->num_sets);
+                                        mod->RTM_data->penalizations[stack->way][-aux] =  mod->RTM_data->penalizations[stack->way][-aux] + 1;
                                 }
+				//Actualizar posicion cabezales
 				for(int w = 0; w<mod->headers;w++)
                                 {
-					
-					if( (mod->RTM_data->headers_pos[w] + aux) > (mod->cache->num_sets - 1) )
-					{
-						mod->RTM_data->headers_pos[w] =  mod->RTM_data->headers_pos[w] + aux - mod->cache->num_sets -1;
+					if(aux < 0){
+						
+                                        	if( mod->RTM_data->headers_pos[w] + aux < 0)
+                                        	{		
+                                                	mod->RTM_data->headers_pos[w] = (mod->cache->num_sets)  + aux + mod->RTM_data->headers_pos[w];
+						}
+                                        	
+                                        	else
+                                        	{
+                                                	mod->RTM_data->headers_pos[w] =  mod->RTM_data->headers_pos[w] + aux;
+                           			}
 					}
-					else if( mod->RTM_data->headers_pos[w] + aux < 0) 
-					{
-						mod->RTM_data->headers_pos[w] = (mod->cache->num_sets - 1) + (mod->RTM_data->headers_pos[w] + aux);
+					else{
+						if( (mod->RTM_data->headers_pos[w] + aux) > (mod->cache->num_sets-1 ) )
+                                                {
+                                                        mod->RTM_data->headers_pos[w] = - (mod->cache->num_sets) +(aux+mod->RTM_data->headers_pos[w]);
+                                                }
+                                                else
+                                                {
+                                                        mod->RTM_data->headers_pos[w] =  mod->RTM_data->headers_pos[w] + aux;
+                                                }
 
 					}
-					else
-					{
-						mod->RTM_data->headers_pos[w] =  mod->RTM_data->headers_pos[w] + aux;
-					}
+				
                                         
-                                }				
+                                }
+
+				assert(mod->RTM_data->headers_pos[0] >= 0 && mod->RTM_data->headers_pos[0] < mod->cache->num_sets);
+				assert(mod->RTM_data->headers_pos[1] >= 0 && mod->RTM_data->headers_pos[1] < mod->cache->num_sets); 
+				assert(mod->RTM_data->headers_pos[2] >= 0 && mod->RTM_data->headers_pos[2] < mod->cache->num_sets); 
+				assert(mod->RTM_data->headers_pos[3] >= 0 && mod->RTM_data->headers_pos[3] < mod->cache->num_sets); 				
 				
 			}
 		}

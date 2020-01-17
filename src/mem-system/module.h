@@ -36,7 +36,7 @@ struct RTM_data_t
 {
 	int last_read_set;
 	int *headers_pos;
-	int *penalizations;
+	int **penalizations;
 }; 
 
 extern enum RTM_type_t
@@ -501,5 +501,5 @@ void mod_interval_report(struct mod_t *mod);
 
 //Header penalization, Hugo
 //struct mod_last_used_set_t *mod_last_used_set_create(int num_sets, int assoc);
-struct RTM_data_t *RTM_data_create(int num_sets, int readers);
+struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers);
 #endif
