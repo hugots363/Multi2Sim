@@ -2152,7 +2152,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			sets_per_h = mod->cache->num_sets/mod->headers;
 			if(mod->RTM_type == 1)
 			{	
-				hit_set = stack->hit;
+				hit_set = stack->set;
 				acc = hit_set/sets_per_h;
 				aux = hit_set - mod->RTM_data->headers_pos[acc];
 				if(aux >= 0)
@@ -2173,7 +2173,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			if( mod->RTM_type == 2)
 			{
 				//TODO REvisar SE en base al nuevo evento
-				hit_set = stack->hit;
+				hit_set = stack->set;
                                 acc = hit_set/sets_per_h;
                                 aux = hit_set - mod->RTM_data->headers_pos[acc];
                                 
@@ -2190,7 +2190,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			}
 			if(mod->RTM_type == 3)
 			{
-				hit_set = stack->hit;
+				hit_set = stack->set;
 				aux = mod->RTM_data->headers_pos[0];
 				for(int w = 0; w<mod->headers;w++ )
 				{	
