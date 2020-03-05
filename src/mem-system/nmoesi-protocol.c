@@ -168,7 +168,13 @@ int EV_MOD_NMOESI_FIND_AND_LOCK_MEM_CONTROLLER_FINISH;
 
 int EV_MOD_ATD_DELAYED_SET;
 
+//Hugo dir translations
+int ent_to_direct(int dir_ent,int assoc,int num_sets)
+{
+	return ((dir_ent % assoc)*(num_sets/assoc) + dir_ent/assoc);
+}
 
+//
 
 int should_count_stats(struct mod_stack_t *stack)
 {
@@ -1851,9 +1857,13 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	int aux = 0;
 	int desp_menor = 999999;
 	int header_lec = 0;
-	int sets_per_h = 0;
+	//int sets_per_h = 0;
 	int desbordamiento = 0;
 	int desb_selec = 0;
+	int desp_bsup = 99999;
+	int desp_binf = 99999;
+	
+
 
 
 	const int thread_id = stack->client_info->core * x86_cpu_num_threads + stack->client_info->thread;
@@ -2141,23 +2151,25 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			cache_access_block(mod->cache, stack->set, stack->way);
 		}
 
-		/* Access latency */
-		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
-			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM, stack, 0); /* TODO: Zero? */
-		else
-			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency); /* Access latency */
-		/* Calculating header penalty, Hugo */
+				
                 if(mod->level == 1 && mod->RTM  )
 		{
-			sets_per_h = mod->cache->num_sets/mod->headers;
+
+			/* Calculating header penalty, Hugo */
+                	printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+                        for(int i = 0; i < mod->headers;i++ ){
+                                printf("%d ",mod->RTM_data->headers_pos[i]);		
+			}
+
 			if(mod->RTM_type == 1)
 			{	
 				hit_set = stack->set;
-				acc = hit_set/sets_per_h;
-				aux = hit_set - mod->RTM_data->headers_pos[acc];
+				//Tape head which must read
+				acc = hit_set%mod->cache->assoc;
+				aux = hit_set/mod->cache->assoc - mod->RTM_data->headers_pos[acc]/mod->cache->assoc;
 				if(aux >= 0)
 				{
-					mod->RTM_data->penalizations[stack->way][aux] = mod->RTM_data->penalizations[stack->way][aux] + 1; 
+					mod->RTM_data->penalizations[stack->way][aux] = mod->RTM_data->penalizations[stack->way][aux] + 1;
 				}
 				else
 				{
@@ -2165,81 +2177,69 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				}
 				for(int w = 0; w<mod->headers;w++)
 				{
-					mod->RTM_data->headers_pos[w] = mod->RTM_data->headers_pos[w] + aux;
+					mod->RTM_data->headers_pos[w] = mod->RTM_data->headers_pos[w] + aux*mod->cache->assoc;
 				}
 							
 				
 			}
 			if( mod->RTM_type == 2)
-			{
-				//TODO REvisar SE en base al nuevo evento
-				hit_set = stack->set;
-                                acc = hit_set/sets_per_h;
-                                aux = hit_set - mod->RTM_data->headers_pos[acc];
-                                
-                                if(aux >= 0)
-                                {
-                                        mod->RTM_data->penalizations[stack->way][aux] = mod->RTM_data->penalizations[stack->way][aux] + 1;
-
-                                }
-                                else
-                                {
-                                         mod->RTM_data->penalizations[stack->way][-aux] = mod->RTM_data->penalizations[stack->way][-aux] + 1;
-                                }				
+			{	
+				//Quitar, cerramos esta linea de trabajo				
 
 			}
 			if(mod->RTM_type == 3)
 			{
 				hit_set = stack->set;
-				aux = mod->RTM_data->headers_pos[0];
+				desp_menor = 99999;
 				for(int w = 0; w<mod->headers;w++ )
 				{	
+					aux = mod->RTM_data->headers_pos[w];
 					//Desbordamiento: 0->No hay 1->Desbordamiento superior 2->Desbordamiento inferior	
-					
-					
-						
-					acc = hit_set - aux;
-					acc = (acc>0)?(acc):(-acc);
-					if(acc >  mod->cache->num_sets ){
-						assert( acc <= mod->cache->num_sets );
-					}
-					if(mod->cache->num_sets - aux +hit_set <acc  && mod->cache->num_sets - aux +hit_set >= 0){
-						acc = mod->cache->num_sets - aux +hit_set;
-						desbordamiento = 1;	
-					}
-					else if( - (aux -hit_set ) +mod->cache->num_sets +1 < acc  && -(aux -hit_set ) +mod->cache->num_sets +1  >=0){
-						acc =  - (aux -hit_set ) +mod->cache->num_sets +1;
-						desbordamiento = 2;
-					}
-					else{desbordamiento = 0;}
-					
-					
-					assert(acc >= 0 && acc <= mod->cache->num_sets-1 );
 
 						
+					acc = ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets) - ent_to_direct(aux,mod->cache->assoc,mod->cache->num_sets);
+					//Distancia lineal
+					acc = (acc>0)?(acc):(-acc);
+					assert( acc <= mod->cache->num_sets );
+					desp_bsup = mod->cache->num_sets - ent_to_direct(mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets);
+					desp_binf = ent_to_direct(mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + mod->cache->num_sets - ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets);   	
+					// ¿Desbordamiento?:superior , inferior o nada
+					if(desp_bsup <= desp_binf && desp_bsup <= acc  )
+					{
+						desbordamiento = 1;
+						acc = desp_bsup;
+					}	
+					else if(desp_binf <= desp_bsup && desp_binf <= acc)
+					{
+						desbordamiento = 2;
+						acc = desp_binf;
+					}
+					else
+					{
+						desbordamiento = 0;
+					}	
+		
+											
 					if(acc < desp_menor )
 					{
 						header_lec = w;
 						desp_menor = acc;
-						desb_selec = desbordamiento;		
+						desb_selec = desbordamiento; 		
 					}
-					aux = aux + sets_per_h;
-					if(aux >= mod->cache->num_sets)
-					{
-						aux = aux - mod->cache->num_sets;
-					}
+					desp_bsup = 99999;
+        				desp_binf = 99999;
+					desbordamiento = 0;
 					
 				}
-				desp_menor = 9999;
-				acc = mod->RTM_data->headers_pos[header_lec];
-				//Tenemos en header_lec el cabezal más cercano, en acc la posicion de ese cabezal
-								
-				if(desb_selec == 0){aux = hit_set - acc;}
-				else if(desb_selec == 2){aux = -(-hit_set+acc)+ mod->cache->num_sets; }
-				else{aux = mod->cache->num_sets-acc+hit_set; }
+
+				//Tenemos en header_lec el cabezal más cercano, en desp_menor el desplazamiento menor, en desb_selec si hay desbordamiento y de que tipo
+				//Aux = desplazamiento 				
 				//assert(aux <= sets_per_h);
-				
-				if(aux >= 0)
+				 if(desb_selec == 0){aux = ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets) - ent_to_direct(header_lec, mod->cache->assoc,mod->cache->num_sets);}
+				 else if(desb_selec == 2){aux =desp_binf = ent_to_direct(mod->RTM_data->headers_pos[header_lec], mod->cache->assoc,mod->cache->num_sets) + mod->cache->num_sets - ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets); } 
+				 else{aux = mod->cache->num_sets - ent_to_direct(mod->RTM_data->headers_pos[header_lec],mod->cache->assoc,mod->cache->num_sets) + ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets); }
+				//En aux tenemos el desplazamiento, actualizamos las estadísticas 
+			 	 if(aux >= 0)
                                 {
 					assert(aux >= 0 && aux < mod->cache->num_sets);
                                         mod->RTM_data->penalizations[stack->way][aux] =  mod->RTM_data->penalizations[stack->way][aux] + 1;
@@ -2250,19 +2250,22 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 					assert(-aux >= 0 && -aux < mod->cache->num_sets);
                                         mod->RTM_data->penalizations[stack->way][-aux] =  mod->RTM_data->penalizations[stack->way][-aux] + 1;
                                 }
+
+			
+				printf(" %d ", abs(aux));
 				//Actualizar posicion cabezales
 				for(int w = 0; w<mod->headers;w++)
                                 {
 					if(aux < 0){
 						
-                                        	if( mod->RTM_data->headers_pos[w] + aux < 0)
+                                        	if( mod->RTM_data->headers_pos[w]+aux*mod->cache->assoc  < mod->cache->num_sets)
                                         	{		
-                                                	mod->RTM_data->headers_pos[w] = (mod->cache->num_sets)  + aux + mod->RTM_data->headers_pos[w];
+                                                	mod->RTM_data->headers_pos[w] = mod->RTM_data->headers_pos[w]+aux*mod->cache->assoc - mod->cache->num_sets -1;
 						}
                                         	
                                         	else
                                         	{
-                                                	mod->RTM_data->headers_pos[w] =  mod->RTM_data->headers_pos[w] + aux;
+                                                	mod->RTM_data->headers_pos[w] =  (mod->RTM_data->headers_pos[w] + aux*mod->cache->assoc )%(mod->cache->num_sets -1);
                            			}
 					}
 					else{
@@ -2279,6 +2282,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				
                                         
                                 }
+		
 
 				assert(mod->RTM_data->headers_pos[0] >= 0 && mod->RTM_data->headers_pos[0] < mod->cache->num_sets);
 				assert(mod->RTM_data->headers_pos[1] >= 0 && mod->RTM_data->headers_pos[1] < mod->cache->num_sets); 
@@ -2286,7 +2290,23 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				assert(mod->RTM_data->headers_pos[3] >= 0 && mod->RTM_data->headers_pos[3] < mod->cache->num_sets); 				
 				
 			}
+			//[DEBUG]
+				printf(" %d  ",abs(aux));
+                               	for(int i = 0; i < mod->headers;i++){
+                                printf("%d ",mod->RTM_data->headers_pos[i]);
+                                }
+				if(stack->read){printf(" READ");}
+				else if(stack->write){printf(" WRITE");}
+				else{printf("OTHER");}
+                                printf("\n");
 		}
+
+		/* Access latency */
+		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
+			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM, stack, 0); /* TODO: Zero? */
+		else
+			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(aux)); /* Access latency */
+
 
 		/* End of my code*/
 		return;
