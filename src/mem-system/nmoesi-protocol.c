@@ -2189,18 +2189,16 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			}
 			if(mod->RTM_type == 3)
 			{
-				hit_set = stack->set;
-				desp_menor = 99999;
-				for(int w = 0; w<mod->headers;w++ )
-				{	
-					aux = mod->RTM_data->headers_pos[w];
+					hit_set = stack->set;
+					desp_menor = 9999;	
 					//Desbordamiento: 0->No hay 1->Desbordamiento superior 2->Desbordamiento inferior	
-
-						
-					acc = ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets) - ent_to_direct(aux,mod->cache->assoc,mod->cache->num_sets);
-					//Distancia lineal
-					acc = (acc>0)?(acc):(-acc);
-					assert( acc <= mod->cache->num_sets );
+					
+					for(int w = 0; w<mod->headers;w++ )
+					{
+					acc = ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets) - ent_to_direct(mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets);
+                                        //Distancia lineal
+                                        acc = (acc>0)?(acc):(-acc);
+                                        assert( acc <= mod->cache->num_sets );
 					desp_bsup = mod->cache->num_sets - ent_to_direct(mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets);
 					desp_binf = ent_to_direct(mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + mod->cache->num_sets - ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets);   	
 					// ¿Desbordamiento?:superior , inferior o nada
@@ -2230,13 +2228,13 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
         				desp_binf = 99999;
 					desbordamiento = 0;
 					
-				}
-
+				
+					}
 				//Tenemos en header_lec el cabezal más cercano, en desp_menor el desplazamiento menor, en desb_selec si hay desbordamiento y de que tipo
 				//Aux = desplazamiento 				
 				//assert(aux <= sets_per_h);
-				 if(desb_selec == 0){aux = ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets) - ent_to_direct(header_lec, mod->cache->assoc,mod->cache->num_sets);}
-				 else if(desb_selec == 2){aux =desp_binf = ent_to_direct(mod->RTM_data->headers_pos[header_lec], mod->cache->assoc,mod->cache->num_sets) + mod->cache->num_sets - ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets); } 
+				 if(desb_selec == 0){aux = ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets) - ent_to_direct(mod->RTM_data->headers_pos[header_lec], mod->cache->assoc,mod->cache->num_sets);}
+				 else if(desb_selec == 2){aux = ent_to_direct(mod->RTM_data->headers_pos[header_lec], mod->cache->assoc,mod->cache->num_sets) + mod->cache->num_sets - ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets); } 
 				 else{aux = mod->cache->num_sets - ent_to_direct(mod->RTM_data->headers_pos[header_lec],mod->cache->assoc,mod->cache->num_sets) + ent_to_direct(hit_set,mod->cache->assoc,mod->cache->num_sets); }
 				//En aux tenemos el desplazamiento, actualizamos las estadísticas 
 			 	 if(aux >= 0)
@@ -2252,44 +2250,37 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                                 }
 
 			
-				printf(" %d ", abs(aux));
 				//Actualizar posicion cabezales
 				for(int w = 0; w<mod->headers;w++)
                                 {
-					if(aux < 0){
+					if(aux >=  0)
+					{
 						
-                                        	if( mod->RTM_data->headers_pos[w]+aux*mod->cache->assoc  < mod->cache->num_sets)
-                                        	{		
-                                                	mod->RTM_data->headers_pos[w] = mod->RTM_data->headers_pos[w]+aux*mod->cache->assoc - mod->cache->num_sets -1;
-						}
-                                        	
-                                        	else
-                                        	{
-                                                	mod->RTM_data->headers_pos[w] =  (mod->RTM_data->headers_pos[w] + aux*mod->cache->assoc )%(mod->cache->num_sets -1);
-                           			}
+                                        	mod->RTM_data->headers_pos[w] =  (mod->RTM_data->headers_pos[w] + aux*mod->cache->assoc )%(mod->cache->num_sets -1);
 					}
-					else{
-						if( (mod->RTM_data->headers_pos[w] + aux) > (mod->cache->num_sets-1 ) )
-                                                {
-                                                        mod->RTM_data->headers_pos[w] = - (mod->cache->num_sets) +(aux+mod->RTM_data->headers_pos[w]);
-                                                }
-                                                else
-                                                {
-                                                        mod->RTM_data->headers_pos[w] =  mod->RTM_data->headers_pos[w] + aux;
-                                                }
-
+					else if(aux * mod->cache->assoc+mod->RTM_data->headers_pos[w]   < 0 )
+					{
+                                                    mod->RTM_data->headers_pos[w] = ent_to_direct( mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + aux + 1;
+                                                    mod->RTM_data->headers_pos[w] = (mod->RTM_data->headers_pos[w]*mod->cache->assoc) + (mod->cache->num_sets-1);
+                                        
+					}	    
+                                        else
+                                        {
+							mod->RTM_data->headers_pos[w] = ent_to_direct( mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + aux;
+							mod->RTM_data->headers_pos[w] = (mod->RTM_data->headers_pos[w]*mod->cache->assoc)%(mod->cache->num_sets-1);	
 					}
 				
                                         
-                                }
-		
+				}	
+					
+				
 
 				assert(mod->RTM_data->headers_pos[0] >= 0 && mod->RTM_data->headers_pos[0] < mod->cache->num_sets);
 				assert(mod->RTM_data->headers_pos[1] >= 0 && mod->RTM_data->headers_pos[1] < mod->cache->num_sets); 
 				assert(mod->RTM_data->headers_pos[2] >= 0 && mod->RTM_data->headers_pos[2] < mod->cache->num_sets); 
 				assert(mod->RTM_data->headers_pos[3] >= 0 && mod->RTM_data->headers_pos[3] < mod->cache->num_sets); 				
 				
-			}
+				
 			//[DEBUG]
 				printf(" %d  ",abs(aux));
                                	for(int i = 0; i < mod->headers;i++){
@@ -2300,6 +2291,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				else{printf("OTHER");}
                                 printf("\n");
 		}
+	}
 
 		/* Access latency */
 		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
