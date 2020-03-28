@@ -170,7 +170,7 @@ void mod_handler_nmoesi_pref_find_and_lock(int event, void *data);
 void mod_handler_atd_delayed_set(int event, void *data);
 
 //Hugo traduction functions
-int ent_to_direct(int dir_ent);
+int ent_to_direct(int dir_ent,int ncab ,int num_sets);
 
 #endif
 

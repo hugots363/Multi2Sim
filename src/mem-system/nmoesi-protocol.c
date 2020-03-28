@@ -169,9 +169,9 @@ int EV_MOD_NMOESI_FIND_AND_LOCK_MEM_CONTROLLER_FINISH;
 int EV_MOD_ATD_DELAYED_SET;
 
 //Hugo dir translations
-int ent_to_direct(int dir_ent,int assoc,int num_sets)
+int ent_to_direct(int dir_ent,int ncab ,int num_sets)
 {
-	return ((dir_ent % assoc)*(num_sets/assoc) + dir_ent/assoc);
+	return ((dir_ent % ncab)*(num_sets/ncab) + (dir_ent/ncab)%(num_sets/ncab) );
 }
 
 //
@@ -1862,6 +1862,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	int desb_selec = 0;
 	int desp_bsup = 99999;
 	int desp_binf = 99999;
+	int nheaders = mod->headers;
 	
 
 
@@ -2165,8 +2166,10 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			{	
 				hit_set = stack->set;
 				//Tape head which must read
-				acc = hit_set%mod->cache->assoc;
-				aux = hit_set/mod->cache->assoc - mod->RTM_data->headers_pos[acc]/mod->cache->assoc;
+				acc = hit_set%nheaders;
+				//Desp to reach the set
+				aux = ent_to_direct(hit_set,nheaders ,mod->cache->num_sets) - ent_to_direct(mod->RTM_data->headers_pos[acc], nheaders,mod->cache->num_sets);
+
 				if(aux >= 0)
 				{
 					mod->RTM_data->penalizations[stack->way][aux] = mod->RTM_data->penalizations[stack->way][aux] + 1;
@@ -2177,7 +2180,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				}
 				for(int w = 0; w<mod->headers;w++)
 				{
-					mod->RTM_data->headers_pos[w] = mod->RTM_data->headers_pos[w] + aux*mod->cache->assoc;
+					mod->RTM_data->headers_pos[w] = mod->RTM_data->headers_pos[w] + aux*nheaders;
 				}
 							
 				
@@ -2249,27 +2252,28 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                                         mod->RTM_data->penalizations[stack->way][-aux] =  mod->RTM_data->penalizations[stack->way][-aux] + 1;
                                 }
 
+
 			
 				//Actualizar posicion cabezales
 				for(int w = 0; w<mod->headers;w++)
                                 {
-					if(aux >=  0)
-					{
+					if (aux >=  0){
 						
                                         	mod->RTM_data->headers_pos[w] =  (mod->RTM_data->headers_pos[w] + aux*mod->cache->assoc )%(mod->cache->num_sets -1);
 					}
-					else if(aux * mod->cache->assoc+mod->RTM_data->headers_pos[w]   < 0 )
-					{
-                                                    mod->RTM_data->headers_pos[w] = ent_to_direct( mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + aux + 1;
-                                                    mod->RTM_data->headers_pos[w] = (mod->RTM_data->headers_pos[w]*mod->cache->assoc) + (mod->cache->num_sets-1);
+					else {
+						if(aux == -1){	
+							printf("Entran al if");	
+						//if ( (aux * (mod->cache->assoc) + mod->RTM_data->headers_pos[w])  < 0 ){
+                                        	//	mod->RTM_data->headers_pos[w] = ent_to_direct( mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + aux + 1;
+                                               	//	mod->RTM_data->headers_pos[w] = (mod->RTM_data->headers_pos[w]*mod->cache->assoc) + (mod->cache->num_sets-1);
                                         
-					}	    
-                                        else
-                                        {
-							mod->RTM_data->headers_pos[w] = ent_to_direct( mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + aux;
-							mod->RTM_data->headers_pos[w] = (mod->RTM_data->headers_pos[w]*mod->cache->assoc)%(mod->cache->num_sets-1);	
+						}	    
+                                        	else{
+						mod->RTM_data->headers_pos[w] = ent_to_direct( mod->RTM_data->headers_pos[w],mod->cache->assoc,mod->cache->num_sets) + aux;
+						mod->RTM_data->headers_pos[w] = (mod->RTM_data->headers_pos[w]*mod->cache->assoc)%(mod->cache->num_sets-1);	
+						}
 					}
-				
                                         
 				}	
 					
@@ -2280,7 +2284,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				assert(mod->RTM_data->headers_pos[2] >= 0 && mod->RTM_data->headers_pos[2] < mod->cache->num_sets); 
 				assert(mod->RTM_data->headers_pos[3] >= 0 && mod->RTM_data->headers_pos[3] < mod->cache->num_sets); 				
 				
-				
+				}	
 			//[DEBUG]
 				printf(" %d  ",abs(aux));
                                	for(int i = 0; i < mod->headers;i++){
@@ -2290,7 +2294,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				else if(stack->write){printf(" WRITE");}
 				else{printf("OTHER");}
                                 printf("\n");
-		}
+		
 	}
 
 		/* Access latency */
