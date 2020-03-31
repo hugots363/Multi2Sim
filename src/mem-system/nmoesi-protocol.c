@@ -2157,10 +2157,10 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		{
 
 			/* Calculating header penalty, Hugo */
-                	printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
-                        for(int i = 0; i < mod->headers;i++ ){
-                                printf("%d ",mod->RTM_data->headers_pos[i]);		
-			}
+                	//printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+                        //for(int i = 0; i < mod->headers;i++ ){
+                         //       printf("%d ",mod->RTM_data->headers_pos[i]);		
+			//}
 
 			if(mod->RTM_type == 1)
 			{	
@@ -2290,14 +2290,14 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				}
 					
 			//[DEBUG]
-				printf(" %d  ",abs(aux));
-                               	for(int i = 0; i < mod->headers;i++){
-                                printf("%d ",mod->RTM_data->headers_pos[i]);
-                                }
-				if(stack->read){printf(" READ");}
-				else if(stack->write){printf(" WRITE");}
-				else{printf("OTHER");}
-                                printf("\n");
+				//printf(" %d  ",abs(aux));
+                               	//for(int i = 0; i < mod->headers;i++){
+                                //printf("%d ",mod->RTM_data->headers_pos[i]);
+                                //}
+				//if(stack->read){printf(" READ");}
+				//else if(stack->write){printf(" WRITE");}
+				//else{printf("OTHER");}
+                                //printf("\n");
 		
 	}
 
