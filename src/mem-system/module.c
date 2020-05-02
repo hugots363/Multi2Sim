@@ -81,7 +81,7 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	struct RTM_data_t *RTM_data = xcalloc(1,sizeof(struct RTM_data_t));
 
 	int last_read_set = 0;
-        int *headers_pos = xcalloc( headers,sizeof(int*));
+        int *headers_pos = xcalloc( headers,sizeof(int));
 	int **penalizations = xcalloc(assoc, sizeof(int*));
 	
 	for(int i = 0; i < assoc    ;i++)
@@ -93,7 +93,7 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 
 	for(int i = 0; i<headers;i++)
 	{
-		headers_pos[i] = i;
+		headers_pos[i] = i*((num_sets/headers)/2 -1 + (num_sets/headers)*i);
 	}
 	
 	for (int i = 0; i < assoc; i++)

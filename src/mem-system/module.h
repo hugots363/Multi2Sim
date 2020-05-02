@@ -430,7 +430,8 @@ struct mod_t
 	/*Hugo RTM */
 	int RTM;
 	int mov_cabezal;
-	int headers;	
+	int headers;
+	int entrelazado;	
 	struct RTM_data_t *RTM_data;
 	enum RTM_type_t RTM_type;
 	

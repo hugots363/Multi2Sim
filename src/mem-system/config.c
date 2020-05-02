@@ -1191,9 +1191,9 @@ static void mem_config_read_modules(struct config_t *config)
         
 	//Hugo adding penalty by head movement
         //int mov_cabezal;
-        int RTM;	
-
+        int RTM;
 	int i;
+
 
 	/* Create modules */
 	mem_debug("Creating modules:\n");
@@ -1241,6 +1241,7 @@ static void mem_config_read_modules(struct config_t *config)
 
 		mod->RTM_type = config_read_enum(config, section, "RTM_Type", 0, mod_RTM_type_map, 4); 
 		mod->headers = config_read_int(config, section, "headers", 0);
+		mod->entrelazado = config_read_int(config, section, "entrelazado", 0); 
 
 		if (mod->RTM)
                 {
