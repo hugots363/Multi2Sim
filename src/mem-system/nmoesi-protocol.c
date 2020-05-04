@@ -1873,6 +1873,8 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	assert(stack->client_info->core >= 0 && stack->client_info->core < x86_cpu_num_cores);
 	assert(stack->client_info->thread >= 0 && stack->client_info->thread < x86_cpu_num_threads);
 
+	//fprintf(stderr, "stderr:Entra en find_and_lock\n");
+	//printf("stdout:Entra en find_and_lock\n");
 	if (event == EV_MOD_NMOESI_FIND_AND_LOCK)
 	{
 		mem_debug("  %lld %lld 0x%x %s find and lock (blocking=%d)\n",
@@ -2167,7 +2169,9 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				set_direct = hit_set;
 				if(mod->entrelazado)
 				{
+					//printf("Pos_real(%d)",hit_set);
 					set_direct = ent_to_direct(hit_set,nheaders ,mod->cache->num_sets);
+					printf("Pos_real(%d)",set_direct);
 				}
 				//Tape head which must read
 				header =  set_direct/(mod->cache->num_sets/nheaders);
@@ -2217,8 +2221,9 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 						// ¿Desbordamiento?:superior , inferior o nada
 						if(abs(desp_menor) > abs(desp))
 						{
-							//header_lec = w;
+							header = w;
 							desp_menor = desp;
+							printf(" header(%d) ",desp_menor);
 						}	
 				
 					}
@@ -2232,7 +2237,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				//Actualizar posicion cabezales				
 				for(int w = 0; w < nheaders;w++)
                                 {
-                                	mod->RTM_data->headers_pos[w] =  (mod->RTM_data->headers_pos[w]+desp)%mod->cache->num_sets;
+                                	mod->RTM_data->headers_pos[w] =  (mod->RTM_data->headers_pos[w]+desp_menor)%mod->cache->num_sets;
                                 }      
                                                 
                                                 
@@ -2246,13 +2251,35 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			}
 					
 			//[DEBUG]
-				printf(" %d  ",desp);
+			//
+			        if(mod->RTM_type==1)
+					printf(" %d  ",desp);
+				if(mod->RTM_type==2)
+					printf(" %d ", desp);
+				if(mod->RTM_type==3)
+					printf(" %d  ",desp_menor);
                                	for(int i = 0; i < mod->headers;i++){
                                 	printf("%d ",mod->RTM_data->headers_pos[i]);
                                 }
+				printf(" %d ",header);
 				if(stack->read){printf(" READ");}
 				else if(stack->write){printf(" WRITE");}
 				else{printf("OTHER");}
+				if(mod->RTM_type == 1)
+					printf(" SL ");
+				if(mod->RTM_type == 2)
+                                        printf(" SE ");
+				if(mod->RTM_type == 3)
+                                        printf(" DL ");
+				
+				/*switch(mod->RTM_type){
+					case "SL":printf(" SL ");
+					      	break;
+					case "SE":printf(" SE ");
+					       break;
+					case "DL":printf(" DL ");
+					       break;
+				}*/
                                 printf("\n");
 		
 	}

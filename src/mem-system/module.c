@@ -93,7 +93,7 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 
 	for(int i = 0; i<headers;i++)
 	{
-		headers_pos[i] = i*((num_sets/headers)/2 -1 + (num_sets/headers)*i);
+		headers_pos[i] = ((num_sets/headers)/2 -1 + (num_sets/headers)*i);
 	}
 	
 	for (int i = 0; i < assoc; i++)
