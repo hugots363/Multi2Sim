@@ -2158,10 +2158,11 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		{
 
 			/* Calculating header penalty, Hugo */
-                	printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+                	/*printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
                         for(int i = 0; i < mod->headers;i++ ){
                                printf("%d ",mod->RTM_data->headers_pos[i]);		
 			}
+			*/
 			//SL
 			if(mod->RTM_type == 1)
 			{	
@@ -2171,7 +2172,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				{
 					//printf("Pos_real(%d)",hit_set);
 					set_direct = ent_to_direct(hit_set,nheaders ,mod->cache->num_sets);
-					printf("Pos_real(%d)",set_direct);
+					//printf("Pos_real(%d)",set_direct);
 				}
 				//Tape head which must read
 				header =  set_direct/(mod->cache->num_sets/nheaders);
@@ -2223,7 +2224,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 						{
 							header = w;
 							desp_menor = desp;
-							printf(" header(%d) ",desp_menor);
+							//printf(" header(%d) ",desp_menor);
 						}	
 				
 					}
@@ -2252,7 +2253,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 					
 			//[DEBUG]
 			//
-			        if(mod->RTM_type==1)
+			        /*if(mod->RTM_type==1)
 					printf(" %d  ",desp);
 				if(mod->RTM_type==2)
 					printf(" %d ", desp);
@@ -2271,7 +2272,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                                         printf(" SE ");
 				if(mod->RTM_type == 3)
                                         printf(" DL ");
-				
+				*/
 				/*switch(mod->RTM_type){
 					case "SL":printf(" SL ");
 					      	break;
@@ -2280,7 +2281,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 					case "DL":printf(" DL ");
 					       break;
 				}*/
-                                printf("\n");
+                                //printf("\n");
 		
 	}
 
