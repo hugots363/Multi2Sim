@@ -2289,7 +2289,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM, stack, 0); /* TODO: Zero? */
 		else
-			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp)); /* Access latency */
+			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency); /* Access latency */
 
 
 		/* End of my code*/
