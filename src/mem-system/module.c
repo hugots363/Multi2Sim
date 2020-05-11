@@ -81,6 +81,7 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	struct RTM_data_t *RTM_data = xcalloc(1,sizeof(struct RTM_data_t));
 
 	int last_read_set = 0;
+	long long int total_shifts = 0;
         int *headers_pos = xcalloc( headers,sizeof(int));
 	int **penalizations = xcalloc(assoc, sizeof(int*));
 	
@@ -104,6 +105,7 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	RTM_data->last_read_set = last_read_set;
 	RTM_data->headers_pos = headers_pos;
 	RTM_data->penalizations = penalizations;
+	RTM_data->total_shifts = total_shifts;
 
 	return RTM_data;
 
@@ -1097,8 +1099,8 @@ void mod_interval_report_init(struct mod_t *mod)
                         	fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion", w);
                 	}
        		}
+		fprintf(stack->report_file, "%s","Cantidad de desplazamientos totales");
 	}
-	
 
 	//End
 	fprintf(stack->report_file, "\n");
@@ -1199,6 +1201,7 @@ void mod_interval_report(struct mod_t *mod)
 				fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->penalizations[i][j]);
 			}
 		}
+		fprintf(stack->report_file, ",%lld", mod->RTM_data->total_shifts);
 	}
 		
 		//for(int j = 0; j <= mod->cache->num_sets/mod->readers  ;j++){

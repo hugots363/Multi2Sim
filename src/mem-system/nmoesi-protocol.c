@@ -2178,6 +2178,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				header =  set_direct/(mod->cache->num_sets/nheaders);
 				//Desp to reach the set
 				desp = set_direct - mod->RTM_data->headers_pos[header];
+				mod->RTM_data->total_shifts += abs(desp);
 				//Update stats
 				mod->RTM_data->penalizations[stack->way][abs(desp)]++;
 				for(int w = 0; w<mod->headers;w++)
@@ -2196,6 +2197,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                                 header =  set_direct/(mod->cache->num_sets/nheaders);
                                 //Desp to reach the set
                                 desp = set_direct - mod->RTM_data->headers_pos[header];
+				mod->RTM_data->total_shifts += abs(desp);
                                 //Update stats
                                 mod->RTM_data->penalizations[stack->way][abs(desp)]++;				
 
@@ -2232,6 +2234,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				//Aux = desplazamiento 				
 				//assert(aux <= sets_per_h);
 				 mod->RTM_data->penalizations[stack->way][abs(desp_menor)] ++;  
+				 mod->RTM_data->total_shifts += abs(desp_menor);
 
 
 			
