@@ -106,7 +106,7 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	RTM_data->headers_pos = headers_pos;
 	RTM_data->penalizations = penalizations;
 	RTM_data->total_shifts = total_shifts;
-
+	
 	return RTM_data;
 
 }
@@ -1099,7 +1099,7 @@ void mod_interval_report_init(struct mod_t *mod)
                         	fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion", w);
                 	}
        		}
-		fprintf(stack->report_file, "%s","Cantidad de desplazamientos totales");
+		fprintf(stack->report_file, ",%s","Cantidad de desplazamientos totales");
 	}
 
 	//End
