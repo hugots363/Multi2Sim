@@ -84,27 +84,34 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	long long int total_shifts = 0;
         int *headers_pos = xcalloc( headers,sizeof(int));
 	int **penalizations = xcalloc(assoc, sizeof(int*));
+	int **pen_hit = xcalloc(assoc, sizeof(int*));
+	int **pen_miss = xcalloc(assoc, sizeof(int*));
 	
 	for(int i = 0; i < assoc    ;i++)
 	{
-		
 		penalizations[i] = xcalloc(num_sets,sizeof(int));
-		
+		pen_hit[i] = xcalloc(num_sets,sizeof(int));
+		pen_miss[i] = xcalloc(num_sets,sizeof(int));
 	}
-
 	for(int i = 0; i<headers;i++)
 	{
 		headers_pos[i] = ((num_sets/headers)/2 -1 + (num_sets/headers)*i);
 	}
 	
-	for (int i = 0; i < assoc; i++)
-		for (int j = 0; j < num_sets; j++)
+	for (int i = 0; i < assoc; i++){
+		for (int j = 0; j < num_sets; j++){
 			penalizations[i][j] = 0;
+			pen_hit[i][j]= 0;
+			pen_miss[i][j] = 0;
+		}
+	}
 
 	/* Pointers*/	
 	RTM_data->last_read_set = last_read_set;
 	RTM_data->headers_pos = headers_pos;
 	RTM_data->penalizations = penalizations;
+	RTM_data->pen_hit = pen_hit;
+	RTM_data->pen_miss = pen_miss;
 	RTM_data->total_shifts = total_shifts;
 
 	return RTM_data;
@@ -1099,6 +1106,15 @@ void mod_interval_report_init(struct mod_t *mod)
                         	fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion", w);
                 	}
        		}
+		for( int i = 0; i < mod->cache->assoc   ; i++ )
+		{
+                	for(int w = 0; w < mod->cache->num_sets  ;w++ )
+			{
+										                        
+		        	fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion hits", w);
+			}
+		}
+		for( int i = 0; i < mod->cache->assoc   ; i++ )                                                                                                                                                    {                                                                                                                                                                                                          for(int w = 0; w < mod->cache->num_sets  ;w++ )                                                                                                                                                    {                                                                                                                                                                                                          fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion misses", w);                                                                   }                                                                                                                                                                                          }		
 		fprintf(stack->report_file, "%s","Cantidad de desplazamientos totales");
 	}
 
@@ -1199,6 +1215,15 @@ void mod_interval_report(struct mod_t *mod)
 		for(int i = 0; i< mod->cache->assoc ;i++){
 			for(int j = 0; j < mod->cache->num_sets;j++){
 				fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->penalizations[i][j]);
+			}
+		}
+		for(int i = 0; i< mod->cache->assoc ;i++){
+			for(int j = 0; j < mod->cache->num_sets;j++){
+				fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->pen_hit[i][j]);
+			}
+		}
+		for(int i = 0; i< mod->cache->assoc ;i++){
+			for(int j = 0; j < mod->cache->num_sets;j++){                                                                                                                                				    		fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->pen_miss[i][j]);                                                                                                               
 			}
 		}
 		fprintf(stack->report_file, ",%lld", mod->RTM_data->total_shifts);

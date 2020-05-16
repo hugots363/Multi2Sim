@@ -37,6 +37,8 @@ struct RTM_data_t
 	int last_read_set;
 	int *headers_pos;
 	int **penalizations;
+	int **pen_hit;
+	int **pen_miss; 
 	long long int total_shifts;
 }; 
 
