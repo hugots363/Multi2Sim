@@ -37,9 +37,13 @@ struct RTM_data_t
 	int last_read_set;
 	int *headers_pos;
 	int **penalizations;
+<<<<<<< HEAD
 	int **pen_hit;
 	int **pen_miss; 
 	long long int total_shifts;
+=======
+	long long int total_shifts;	
+>>>>>>> 48c6f0051b16eb4f3f092fec6d9e2301cf035e07
 }; 
 
 extern enum RTM_type_t

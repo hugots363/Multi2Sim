@@ -113,7 +113,7 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	RTM_data->pen_hit = pen_hit;
 	RTM_data->pen_miss = pen_miss;
 	RTM_data->total_shifts = total_shifts;
-
+	
 	return RTM_data;
 
 }
@@ -1106,6 +1106,7 @@ void mod_interval_report_init(struct mod_t *mod)
                         	fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion", w);
                 	}
        		}
+<<<<<<< HEAD
 		for( int i = 0; i < mod->cache->assoc   ; i++ )
 		{
                 	for(int w = 0; w < mod->cache->num_sets  ;w++ )
@@ -1116,6 +1117,9 @@ void mod_interval_report_init(struct mod_t *mod)
 		}
 		for( int i = 0; i < mod->cache->assoc   ; i++ )                                                                                                                                                    {                                                                                                                                                                                                          for(int w = 0; w < mod->cache->num_sets  ;w++ )                                                                                                                                                    {                                                                                                                                                                                                          fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion misses", w);                                                                   }                                                                                                                                                                                          }		
 		fprintf(stack->report_file, "%s","Cantidad de desplazamientos totales");
+=======
+		fprintf(stack->report_file, ",%s","Cantidad de desplazamientos totales");
+>>>>>>> 48c6f0051b16eb4f3f092fec6d9e2301cf035e07
 	}
 
 	//End
