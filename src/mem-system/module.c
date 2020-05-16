@@ -1106,7 +1106,6 @@ void mod_interval_report_init(struct mod_t *mod)
                         	fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion", w);
                 	}
        		}
-<<<<<<< HEAD
 		for( int i = 0; i < mod->cache->assoc   ; i++ )
 		{
                 	for(int w = 0; w < mod->cache->num_sets  ;w++ )
@@ -1117,9 +1116,7 @@ void mod_interval_report_init(struct mod_t *mod)
 		}
 		for( int i = 0; i < mod->cache->assoc   ; i++ )                                                                                                                                                    {                                                                                                                                                                                                          for(int w = 0; w < mod->cache->num_sets  ;w++ )                                                                                                                                                    {                                                                                                                                                                                                          fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion misses", w);                                                                   }                                                                                                                                                                                          }		
 		fprintf(stack->report_file, "%s","Cantidad de desplazamientos totales");
-=======
 		fprintf(stack->report_file, ",%s","Cantidad de desplazamientos totales");
->>>>>>> 48c6f0051b16eb4f3f092fec6d9e2301cf035e07
 	}
 
 	//End
