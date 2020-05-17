@@ -2205,10 +2205,11 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                                 //Update stats
                                 mod->RTM_data->penalizations[stack->way][abs(desp)]++;
 				//Update hit or miss stats
-				if(stack->hit){ mod->RTM_data->pen_hit[stack->way][abs(desp)]++; }                                                                                                                                                 else{mod->RTM_data->pen_miss[stack->way][abs(desp)]++;}				
+				if(stack->hit){ mod->RTM_data->pen_hit[stack->way][abs(desp)]++; } 
+				else{mod->RTM_data->pen_miss[stack->way][abs(desp)]++;}				
 
 			}
-			if(mod->RTM_type == 3)
+			if(mod->RTM_type ==3)
 			{
 					hit_set = stack->set;
                                 	set_direct = hit_set;
@@ -2240,7 +2241,8 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				//Aux = desplazamiento 				
 				//assert(aux <= sets_per_h);
 				 mod->RTM_data->penalizations[stack->way][abs(desp_menor)] ++; 
-				 if(stack->hit){ mod->RTM_data->pen_hit[stack->way][abs(desp_menor)]++; }                                                                                                                                           else{mod->RTM_data->pen_miss[stack->way][abs(desp_menor)]++;}
+				 if(stack->hit){ mod->RTM_data->pen_hit[stack->way][abs(desp_menor)]++; }
+				 else{mod->RTM_data->pen_miss[stack->way][abs(desp_menor)]++;}
 				 mod->RTM_data->total_shifts += abs(desp_menor);
 
 
