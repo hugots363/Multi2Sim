@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = cpuxalan_r
+args = t5.xml xalanc.xsl
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2017/523.xalancbmk_r/run/run_base_refrate_mytest-m32.0000
+StdOut = cpuxalan.out

@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = povray_base.i386
+args = SPEC-benchmark-ref.ini
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/453.povray
+StdOut = povray.out

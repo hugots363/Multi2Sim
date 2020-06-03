@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = astar_base.i386
+args = rivers.cfg
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/473.astar
+StdOut = astar.out

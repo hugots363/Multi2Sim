@@ -1,0 +1,6 @@
+[ Context 0 ]
+exe = gobmk_base.i386
+args = --quiet --mode gtp
+stdin = trevord.tst
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/445.gobmk
+StdOut = gobmk.out

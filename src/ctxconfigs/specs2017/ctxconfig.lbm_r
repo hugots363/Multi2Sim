@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = lbm_r
+args = 3000 reference.dat 0 0 100_100_130_ldc.of 
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2017/519.lbm_r/run/run_base_test_mytest-m32.0001
+StdOut = lbm.out

@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = bzip2_base.i386
+args = input.source 280
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/401.bzip2
+StdOut = bzip2.out

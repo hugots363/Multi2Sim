@@ -1,0 +1,4 @@
+[ Context 0 ]
+exe = sjeng_base.i386
+args = train.txt
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/458.sjeng

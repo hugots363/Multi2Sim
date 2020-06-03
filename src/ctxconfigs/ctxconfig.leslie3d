@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = leslie3d_base.i386
+stdin = leslie3d.in
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/437.leslie3d
+StdOut = leslie3d.out

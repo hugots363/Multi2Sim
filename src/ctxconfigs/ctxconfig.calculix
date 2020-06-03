@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = calculix_base.i386
+args = -i hyperviscoplastic
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/454.calculix
+StdOut = calculix.out

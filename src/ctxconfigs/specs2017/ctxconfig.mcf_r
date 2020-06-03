@@ -1,0 +1,6 @@
+[ Context 0 ]
+exe = mcf_r
+args = inp.in
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2017/505.mcf_r/run/run_base_refrate_mytest-m32.0000
+StdOut = mcf.out
+

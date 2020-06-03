@@ -1,0 +1,6 @@
+ontext 0 ]
+exe = xz_r
+args = input.combined 250 a841f68f38572a49d86226b7ff5baeb31bd19dc637a922a972b2e6d1257a890f6a544ecab967c313e370478c74f760eb229d4eef8a8d2836d233d3e9dd1430bf 40401484 41217675 7
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2017/557.xz_r/run/run_base_refrate_mytest-m32.0001
+StdOut = xz.out
+

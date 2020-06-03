@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = h264ref_base.i386
+args = -d sss_encoder_main.cfg
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/464.h264ref
+StdOut = h264ref.out

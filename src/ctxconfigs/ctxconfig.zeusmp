@@ -1,0 +1,4 @@
+[ Context 0 ]
+exe = zeusmp_base.i386
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/434.zeusmp
+StdOut = zeusmp.out

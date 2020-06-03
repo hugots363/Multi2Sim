@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = gamess_base.i386
+stdin = triazolium.config
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/416.gamess
+StdOut = gamess.out

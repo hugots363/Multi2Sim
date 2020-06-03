@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = gromacs_base.i386
+args = -silent -deffnm gromacs -nice 0
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/435.gromacs
+StdOut = gromacs.out

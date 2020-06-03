@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = libquantum_base.i386
+args = 1397 8
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/462.libquantum
+StdOut = libquantum.out

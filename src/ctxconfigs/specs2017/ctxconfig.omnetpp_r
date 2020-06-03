@@ -1,0 +1,6 @@
+[Context 0 ]
+exe = omnetpp_r
+args = omnetpp.ini
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2017/520.omnetpp_r/run/run_base_refrate_mytest-m32.0000
+StdOut = omnetpp.out
+

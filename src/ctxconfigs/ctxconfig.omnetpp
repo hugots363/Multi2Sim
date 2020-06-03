@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = omnetpp_base.i386
+args = omnetpp.ini
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/471.omnetpp
+StdOut = omnetpp.out

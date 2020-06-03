@@ -1,0 +1,5 @@
+[ Context 0 ]
+exe = cactusADM_base.i386
+args = benchADM.par
+cwd = /nfs/alumnos/hutarsan/Multi2Sim/src/benchmarks/spec2006/436.cactusADM
+StdOut = cactusADM.out
