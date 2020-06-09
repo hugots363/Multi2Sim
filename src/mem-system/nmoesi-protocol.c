@@ -169,6 +169,7 @@ int EV_MOD_NMOESI_FIND_AND_LOCK_MEM_CONTROLLER_FINISH;
 int EV_MOD_ATD_DELAYED_SET;
 
 //Hugo dir translations
+extern int WU_f;
 int ent_to_direct(int dir_ent,int ncab ,int num_sets)
 {
 	return ((dir_ent % ncab)*(num_sets/ncab) + (dir_ent/ncab)%(num_sets/ncab) );
@@ -2158,11 +2159,18 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		{
 
 			/* Calculating header penalty, Hugo */
-                	/*printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
-                        for(int i = 0; i < mod->headers;i++ ){
-                               printf("%d ",mod->RTM_data->headers_pos[i]);		
+			/*
+			if( WU_f )
+			{
+				printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+                        	for(int i = 0; i < mod->headers;i++ ){
+                               		printf("%d ",mod->RTM_data->headers_pos[i]);
+                        	}
+				printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
 			}
 			*/
+                 
+			
 			//SL
 			if(mod->RTM_type == 1)
 			{	
@@ -2265,37 +2273,32 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 					
 			//[DEBUG]
 			//
-			        /*if(mod->RTM_type==1)
-					printf(" %d  ",desp);
-				if(mod->RTM_type==2)
-					printf(" %d ", desp);
-				if(mod->RTM_type==3)
-					printf(" %d  ",desp_menor);
-                               	for(int i = 0; i < mod->headers;i++){
-                                	printf("%d ",mod->RTM_data->headers_pos[i]);
-                                }
-				printf(" %d ",header);
-				if(stack->read){printf(" READ");}
-				else if(stack->write){printf(" WRITE");}
-				else{printf("OTHER");}
-				if(mod->RTM_type == 1)
-					printf(" SL ");
-				if(mod->RTM_type == 2)
-                                        printf(" SE ");
-				if(mod->RTM_type == 3)
-                                        printf(" DL ");
-				*/
-				/*switch(mod->RTM_type){
-					case "SL":printf(" SL ");
-					      	break;
-					case "SE":printf(" SE ");
-					       break;
-					case "DL":printf(" DL ");
-					       break;
-				}*/
-                                //printf("\n");
-		
-	}
+			/*	
+				if( WU_f  )
+				{
+					if(mod->RTM_type==1)
+                                        	printf(" %d  ",desp);
+                                	if(mod->RTM_type==2)
+                                        	printf(" %d ", desp);
+                                	if(mod->RTM_type==3)
+                                        	printf(" %d  ",desp_menor);
+                                	for(int i = 0; i < mod->headers;i++){
+                                        	printf("%d ",mod->RTM_data->headers_pos[i]);
+                                	}
+                                	printf(" %d ",header);
+                                	if(stack->read){printf(" READ");}
+                                	else if(stack->write){printf(" WRITE");}
+                                	else{printf("OTHER");}
+                                	if(mod->RTM_type == 1)
+                                        	printf(" SL ");
+                                	if(mod->RTM_type == 2)
+                                        	printf(" SE ");
+                                	if(mod->RTM_type == 3)
+                                        	printf(" DL ");
+                               		printf("\n");
+				}
+			*/	
+		}
 
 		/* Access latency */
 		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))

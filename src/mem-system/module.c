@@ -58,7 +58,8 @@ struct str_map_t mod_access_kind_map =
 		{ "Prefetch", mod_access_prefetch }
 	}
 };
-
+//Global vars Hugo
+extern struct mod_t *mod_RTM;
 
 
 /* Event used for updating the state of adaptative prefetch policy */
@@ -79,7 +80,6 @@ char *mod_RTM_type[] = {"Nulo","SL","SE","DL"};
 struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 {
 	struct RTM_data_t *RTM_data = xcalloc(1,sizeof(struct RTM_data_t));
-
 	int last_read_set = 0;
 	long long int total_shifts = 0;
         int *headers_pos = xcalloc( headers,sizeof(int));
@@ -89,9 +89,9 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	
 	for(int i = 0; i < assoc    ;i++)
 	{
-		penalizations[i] = xcalloc(num_sets,sizeof(int));
-		pen_hit[i] = xcalloc(num_sets,sizeof(int));
-		pen_miss[i] = xcalloc(num_sets,sizeof(int));
+		penalizations[i] = xcalloc(num_sets/headers,sizeof(int));
+		pen_hit[i] = xcalloc(num_sets/headers,sizeof(int));
+		pen_miss[i] = xcalloc(num_sets/headers,sizeof(int));
 	}
 	for(int i = 0; i<headers;i++)
 	{
@@ -99,7 +99,7 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	}
 	
 	for (int i = 0; i < assoc; i++){
-		for (int j = 0; j < num_sets; j++){
+		for (int j = 0; j < num_sets/headers; j++){
 			penalizations[i][j] = 0;
 			pen_hit[i][j]= 0;
 			pen_miss[i][j] = 0;
@@ -116,6 +116,18 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers)
 	
 	return RTM_data;
 
+}
+void reset_shift_stats()
+{
+	mod_RTM->RTM_data->total_shifts = 0;
+	for (int i = 0; i < mod_RTM->cache->assoc; i++){
+                for (int j = 0; j < mod_RTM->cache->num_sets/mod_RTM->headers; j++){
+                        mod_RTM->RTM_data->penalizations[i][j] = 0;
+                        mod_RTM->RTM_data->pen_hit[i][j]= 0;
+                        mod_RTM->RTM_data->pen_miss[i][j] = 0;
+                }
+        }	
+	//TODO Reset tots els stats de mod 	
 }
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,

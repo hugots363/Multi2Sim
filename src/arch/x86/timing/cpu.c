@@ -253,10 +253,12 @@ char *x86_config_help =
 
 /* Main Processor Global Variable */
 struct x86_cpu_t *x86_cpu;
+//Hugo global var
+long long WU;
+int WU_f = 0;
 
 /* Trace */
 int x86_trace_category;
-
 
 /* Configuration file and parameters */
 
@@ -762,6 +764,8 @@ void x86_cpu_read_config(void)
 
 	if (x86_cpu_fast_forward_count <= 0)
 		x86_cpu_fast_forward_count = config_read_llint(config, section, "FastForward", 0);
+	//Hugo 
+	WU =  config_read_llint(config, section, "WarmUp", 0);
 
 	x86_cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
 	x86_cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
@@ -1166,7 +1170,14 @@ int x86_cpu_run(void)
 		x86_emu_max_inst -= x86_cpu_fast_forward_count;
 		x86_emu_min_inst_per_ctx -= x86_cpu_fast_forward_count;
 	}
-
+ 	//Hugo setting the WU	
+ 	//Cobnd = WU+FF
+	if( (arch_x86->inst_count >= (WU + x86_cpu_fast_forward_count))  && !WU_f)
+	{
+		reset_shift_stats();
+		x86_cpu_reset_stats();
+		WU_f = 1;
+	}
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && x86_cpu->num_committed_inst >= x86_emu_max_inst)
 		esim_finish = esim_finish_x86_max_inst;

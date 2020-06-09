@@ -56,7 +56,8 @@
 /*
  * Global Variables
  */
-
+//Hugo
+struct mod_t *mod_RTM = NULL;
 char *mem_config_file_name = "";
 
 char *mem_config_help =
@@ -1231,8 +1232,8 @@ static void mem_config_read_modules(struct config_t *config)
 		//Hugo reading  new vars in the config
        		//mov_cabezal = config_read_int(config, section, "PenalizacionCabezal", 0);
         	RTM = config_read_int(config, section, "RTM", 0);
-
 		
+
         	/*Penalty by moving the headers, Hugo */
         	//mod->cache->mov_cabezal = mov_cabezal;
 
@@ -1242,10 +1243,13 @@ static void mem_config_read_modules(struct config_t *config)
 		mod->RTM_type = config_read_enum(config, section, "RTM_Type", 0, mod_RTM_type_map, 4); 
 		mod->headers = config_read_int(config, section, "headers", 0);
 		mod->entrelazado = config_read_int(config, section, "entrelazado", 0); 
+		mod->WU = config_read_int(config, section, "WU", 0);
+		mod->WU_f = 0; 
 
 		if (mod->RTM)
                 {
                         mod->RTM_data = RTM_data_create(mod->cache->num_sets, mod->cache->assoc, mod->headers);
+			mod_RTM = mod;
                 }
 		//End
 
