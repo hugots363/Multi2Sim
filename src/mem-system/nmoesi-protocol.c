@@ -1965,7 +1965,6 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 		/* Look for block */
 		stack->hit = mod_find_block(mod, stack->addr, &stack->set, &stack->way, &stack->tag, &stack->state);
-		
 		/* Si es hit y mod->level == 1 */
 		/* Comprobar si lru */
 		/* ctx->l1_lru_hits++ */
@@ -1979,6 +1978,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			if (stack->src_atd_hit > 0)
 				atd_access_block(mod->atd_per_thread[thread_id], stack->tag);
 		}
+		
 
 		/* Debug */
 		if (stack->hit)
@@ -1991,7 +1991,6 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 		/* Statistics */
 		mod->accesses++;
-
 		if (stack->read)
 		{
 			mod->reads++;
@@ -2036,7 +2035,6 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		{
 			fatal("Unknown memory operation type");
 		}
-
 		if (!(stack->retry & (1 << mod->level)))
 		{
 			mod->no_retry_accesses++;
@@ -2153,22 +2151,28 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			cache_set_transient_tag(mod->cache, stack->set, stack->way, stack->tag, stack->client_info);
 			cache_access_block(mod->cache, stack->set, stack->way);
 		}
-
 				
                 if(mod->level == 1 && mod->RTM  )
-		{
+		{	/* 
+			 fprintf(stderr,"Directo, enlazado\n");
+			 for(int i = 0; i < cache->num_sets;i++ ){
+                                        fprintf(stderr,"%d ---------------------%d\n",ent_to_direct(i,nheaders,mod->cache->num_sets),i);
+                                }
+			*/
 
 			/* Calculating header penalty, Hugo */
 			/*
 			if( WU_f )
 			{
-				printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+				
+				fprintf(stderr,"%lld\t%s\t%x\t%d\t%d\t%d\t",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
                         	for(int i = 0; i < mod->headers;i++ ){
-                               		printf("%d ",mod->RTM_data->headers_pos[i]);
+                               		fprintf(stderr,"%d\t",mod->RTM_data->headers_pos[i]);
                         	}
-				printf("%lld %s %x %d %d %d ",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+				
 			}
 			*/
+			
                  
 			
 			//SL
@@ -2221,10 +2225,14 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			{
 					hit_set = stack->set;
                                 	set_direct = hit_set;
+					/*
                                 	if(mod->entrelazado)
                                 	{
+						fprintf(stderr,"ent:%d->",hit_set);
                                         	set_direct = ent_to_direct(hit_set,nheaders ,mod->cache->num_sets);
+						fprintf(stderr,"direct:%d\t",set_direct);
                                 	}
+					*/
 					desp_menor = 9999;	
 					//Desbordamiento: 0->No hay 1->Desbordamiento superior 2->Desbordamiento inferior	
 					
@@ -2273,31 +2281,34 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 					
 			//[DEBUG]
 			//
-			/*	
+				/*
 				if( WU_f  )
-				{
+				{	
+				
 					if(mod->RTM_type==1)
-                                        	printf(" %d  ",desp);
+                                        	fprintf(stderr,"\t%d\t",desp);
                                 	if(mod->RTM_type==2)
-                                        	printf(" %d ", desp);
+                                        	fprintf(stderr,"\t%d\t", desp);
                                 	if(mod->RTM_type==3)
-                                        	printf(" %d  ",desp_menor);
+                                        	fprintf(stderr,"\t%d\t  ",desp_menor);
                                 	for(int i = 0; i < mod->headers;i++){
-                                        	printf("%d ",mod->RTM_data->headers_pos[i]);
+                                        	fprintf(stderr,"%d\t",mod->RTM_data->headers_pos[i]);
                                 	}
-                                	printf(" %d ",header);
-                                	if(stack->read){printf(" READ");}
-                                	else if(stack->write){printf(" WRITE");}
-                                	else{printf("OTHER");}
+                                	fprintf(stderr,"%d\t",header);
+                                	if(stack->read){fprintf(stderr,"READ\t");}
+                                	else if(stack->write){fprintf(stderr,"WRITE\t");}
+                                	else{fprintf(stderr,"OTHER\t");}
                                 	if(mod->RTM_type == 1)
-                                        	printf(" SL ");
+                                        	fprintf(stderr,"SL\t");
                                 	if(mod->RTM_type == 2)
-                                        	printf(" SE ");
+                                        	fprintf(stderr,"SE\t");
                                 	if(mod->RTM_type == 3)
-                                        	printf(" DL ");
-                               		printf("\n");
+                                        	fprintf(stderr,"DL\t");
+                               		fprintf(stderr,"\n");
+				
 				}
-			*/	
+				*/
+				
 		}
 
 		/* Access latency */

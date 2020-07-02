@@ -414,7 +414,8 @@ int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr,
 		set = (tag >> cache->log_block_size) % cache->num_sets;
 	}
 	else
-	{
+	{	
+		
 		panic("%s: invalid range kind (%d)", __FUNCTION__, mod->range_kind);
 	}
 
@@ -444,8 +445,9 @@ int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr,
 	PTR_ASSIGN(tag_ptr, tag);
 
 	/* Miss */
-	if (way == cache->assoc)
+	if (way == cache->assoc){
 		return 0;
+	}
 
 	/* Hit */
 	PTR_ASSIGN(way_ptr, way);
@@ -1107,28 +1109,31 @@ void mod_interval_report_init(struct mod_t *mod)
 	}
 	//Hugo printing new stats
 	
-	fprintf(stack->report_file, ",%s-c%dt%d-%s", mod->name, core, thread, "mru-hits");
+	//fprintf(stack->report_file, ",%s-c%dt%d-%s", mod->name, core, thread, "mru-hits");
 	//for num vias
 	if(mod->RTM )
 	{
 		for( int i = 0; i < mod->cache->assoc   ; i++ )
         	{
-                	for(int w = 0; w < mod->cache->num_sets  ;w++ )
+                	for(int w = 0; w < mod->cache->num_sets/mod->headers  ;w++ )
                 	{
                         	fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion", w);
                 	}
        		}
 		for( int i = 0; i < mod->cache->assoc   ; i++ )
 		{
-                	for(int w = 0; w < mod->cache->num_sets  ;w++ )
+                	for(int w = 0; w < mod->cache->num_sets/mod->headers  ;w++ )
 			{
 										                        
 		        	fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion hits", w);
 			}
 		}
-		for( int i = 0; i < mod->cache->assoc   ; i++ )                                                                                                                                                    {                                                                                                                                                                                                          for(int w = 0; w < mod->cache->num_sets  ;w++ )                                                                                                                                                    {                                                                                                                                                                                                          fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion misses", w);                                                                   }                                                                                                                                                                                          }		
-		fprintf(stack->report_file, "%s","Cantidad de desplazamientos totales");
-		fprintf(stack->report_file, ",%s","Cantidad de desplazamientos totales");
+		for( int i = 0; i < mod->cache->assoc ; i++ ){
+			for(int w = 0; w < mod->cache->num_sets/mod->headers  ;w++ ){
+				fprintf(stack->report_file, ",%s-c%dt%d-%s-%d-%s-%d", mod->name, core, thread,"via",i, "ciclos-penalizacion misses", w);                                            
+                	}                                                                                                                                                                                         
+		}		
+		fprintf(stack->report_file, "%s",",Cantidad de desplazamientos totales");
 	}
 
 	//End
@@ -1177,7 +1182,7 @@ void mod_interval_report(struct mod_t *mod)
 		(double) useful_prefetches_int / (misses_int + useful_prefetches_int) : NAN;
 	
 	/*Number of MRU hits by module, Hugo*/
-        long long  MRU_hits = mod-> mru_hits;
+        //long long  MRU_hits = mod-> mru_hits;
 
 	fprintf(stack->report_file, "%lld", esim_time);
 	fprintf(stack->report_file, ",%lld", completed_prefetches_int);
@@ -1222,21 +1227,22 @@ void mod_interval_report(struct mod_t *mod)
 	}
 	//Hugo adding MRU hits per module of cache and cycle penalties
 	
-	fprintf(stack->report_file, ",%lld", MRU_hits);
+	//fprintf(stack->report_file, ",%lld", MRU_hits);
 	if(mod->RTM)  
 	{	
 		for(int i = 0; i< mod->cache->assoc ;i++){
-			for(int j = 0; j < mod->cache->num_sets;j++){
+			for(int j = 0; j < mod->cache->num_sets/mod->headers;j++){
 				fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->penalizations[i][j]);
 			}
 		}
 		for(int i = 0; i< mod->cache->assoc ;i++){
-			for(int j = 0; j < mod->cache->num_sets;j++){
+			for(int j = 0; j < mod->cache->num_sets/mod->headers;j++){
 				fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->pen_hit[i][j]);
 			}
 		}
-		for(int i = 0; i< mod->cache->assoc ;i++){
-			for(int j = 0; j < mod->cache->num_sets;j++){                                                                                                                                				    		fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->pen_miss[i][j]);                                                                                                               
+		for(int i = 0; i< mod->cache->assoc;i++){
+			for(int j = 0; j < mod->cache->num_sets/mod->headers;j++){                                                                                                                                				    		
+				fprintf(stack->report_file, ",%lld", (long long int) mod->RTM_data->pen_miss[i][j]);                                                                                                               
 			}
 		}
 		fprintf(stack->report_file, ",%lld", mod->RTM_data->total_shifts);
