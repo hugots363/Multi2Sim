@@ -31,6 +31,8 @@
 #include "rob.h"
 #include "trace-cache.h"
 
+//Hugo declaring extern vasr
+extern int rob_mem_cont; 
 
 /* Return the reason why a thread cannot be dispatched. If it can,
  * return x86_dispatch_stall_used. */
@@ -60,6 +62,7 @@ static enum x86_dispatch_stall_t x86_cpu_can_dispatch_thread(int core, int threa
 		}
 
 		/* ROB stalled by a memory or other kind of uop of this thread */
+		if(head->flags & X86_UINST_MEM){rob_mem_cont++;}
 		return (head->flags & X86_UINST_MEM) ? x86_dispatch_stall_rob_mem : x86_dispatch_stall_rob;
 	}
 

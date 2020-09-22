@@ -252,7 +252,7 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 
 	/* Free stats reporting stack */
 	if(ctx->report_stack)
-	{
+	{	
 		file_close(ctx->report_stack->report_file);
 		free(ctx->report_stack->hits_per_level_int);
 		free(ctx->report_stack->stream_hits_per_level_int);
@@ -923,7 +923,7 @@ void x86_ctx_interval_report_init(struct x86_ctx_t *ctx)
 	struct x86_ctx_report_stack_t *stack;
 	char interval_report_file_name[MAX_PATH_SIZE];
 	int ret;
-
+	printf("P1 en ctx_interval_report_init\n");
 	/* Stats interval reporting disabled */
 	if (!epoch_length)
 		return;
@@ -964,6 +964,7 @@ void x86_ctx_interval_report_init(struct x86_ctx_t *ctx)
 
 	/* Print header */
 	fprintf(stack->report_file, "%s", "esim-time");
+	
 	fprintf(stack->report_file, ",pid%d-%s", ctx->pid, "insts");
 	fprintf(stack->report_file, ",pid%d-%s", ctx->pid, "uinsts");
 	fprintf(stack->report_file, ",pid%d-%s", ctx->pid, "loads-int");
@@ -987,6 +988,7 @@ void x86_ctx_interval_report_init(struct x86_ctx_t *ctx)
 	fprintf(stack->report_file, ",pid%d-%s", ctx->pid, "mm-writes-int");
 	for (int i = 0; i < x86_dispatch_stall_max; i++)                                       /* Where the dispatch slots are going */
 		fprintf(stack->report_file, ",pid%d-%s", ctx->pid, str_map_value(&x86_dispatch_stall_map, i));
+	
 	for (int level = 1; level <= max_mod_level - 1; level++)
 	{
 		fprintf(stack->report_file, ",pid%d-l%d-%s", ctx->pid, level, "hits-int");
@@ -1011,9 +1013,8 @@ void x86_ctx_interval_report_init(struct x86_ctx_t *ctx)
 		fprintf(stack->report_file, ",pid%d-l%d-%s", ctx->pid, level, "used-ways-inst");
 	}
 	
-	/* Hugo: New stat  */
+	 //Hugo: New stat  
 	fprintf(stack->report_file, ",pid%d-l%d-%s", ctx->pid, 1,"lru-hits");		
-
 	fprintf(stack->report_file, "\n");
 	fflush(stack->report_file);
 }
@@ -1021,7 +1022,9 @@ void x86_ctx_interval_report_init(struct x86_ctx_t *ctx)
 
 void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 {
+	
 	struct x86_ctx_report_stack_t *stack = ctx->report_stack;
+	
 	int core = ctx->core;
 	int thread = ctx->thread;
 	int thread_id = core * x86_cpu_num_threads + thread;
@@ -1046,21 +1049,23 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 	double interthread_penalty_cycles_int;
 	double interthread_cache_penalty_cycles_int;
 	double interthread_dram_penalty_cycles_int;
-
-
+	
+	
+	printf("P2 en ctx interval report \n");	
+	
 	num_committed_uinst_int = ctx->num_committed_uinst - stack->num_committed_uinst;
 	ipc_int = (double) num_committed_uinst_int / cycles_int;
 	ipc_glob = arch_x86->cycle - arch_x86->last_reset_cycle ? (double) ctx->num_committed_uinst / (arch_x86->cycle - arch_x86->last_reset_cycle) : 0.0;
 	mm_read_accesses = ctx->mm_read_accesses - stack->mm_read_accesses;
 	mm_write_accesses = ctx->mm_write_accesses - stack->mm_write_accesses;
 	mm_pref_accesses = ctx->mm_pref_accesses - stack->mm_pref_accesses;
-
 	/* Ratio of usage and stall of dispatch slots */
 	for (int i = 0; i < x86_dispatch_stall_max; i++)
 	{
 		dispatch_stall_int[i] = ctx->dispatch_stall[i] - stack->dispatch_stall[i];
 		dispatch_total_slots += dispatch_stall_int[i];
 	}
+	
 	for (int i = 0; i < x86_dispatch_stall_max; i++)
 	{
 		dispatch_stall_int[i] = dispatch_total_slots > 0 ?
@@ -1068,7 +1073,8 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 				NAN;
 	}
 
-	/* IPC alone estimation */
+	// IPC alone estimation 
+	
 	interthread_penalty_cycles = ctx->interthread_cache_penalty_cycles + ctx->interthread_dram_penalty_cycles;
 
 	interthread_cache_penalty_cycles_int = ctx->interthread_cache_penalty_cycles - stack->interthread_cache_penalty_cycles;
@@ -1087,29 +1093,32 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 	ipc_alone_dram_int = (double) num_committed_uinst_int / (cycles_int - interthread_dram_penalty_cycles_int);
 
 	l1_lru_hits = ctx->l1_lru_hits - stack->l1_lru_hits;
-
+	
 	/*
 	 * Dump stats
 	 */
-
+	
 	fprintf(stack->report_file, "%lld", esim_time);
+	fflush(stack->report_file);
 	fprintf(stack->report_file, ",%lld", ctx->num_committed_inst);
 	fprintf(stack->report_file, ",%lld", ctx->num_committed_uinst);
 	fprintf(stack->report_file, ",%lld", stack->loads_int);
 	fprintf(stack->report_file, ",%lld", stack->stores_int);
-
-	/* Prefetches issued per level */
-	for (int level = 1; level <= max_mod_level - 1; level++) /* Deepest mod level is main memory, not cache */
+	
+	// Prefetches issued per level 
+	
+	for (int level = 1; level <= max_mod_level - 1; level++) 
 		fprintf(stack->report_file, ",%lld", stack->prefs_per_level_int[level]);
-
+	
 	/* End-to-end latency in ns */
+	
 	fprintf(stack->report_file, ",%.3f", stack->loads_int ?
-			(double) stack->aggregate_load_lat_int / (stack->loads_int * 1000.0) : NAN); /* Load */
+			(double) stack->aggregate_load_lat_int / (stack->loads_int * 1000.0) : NAN); // Load 
 	fprintf(stack->report_file, ",%.3f", stack->stores_int ?
-			(double) stack->aggregate_store_lat_int / (stack->stores_int * 1000.0) : NAN); /* Store */
+			(double) stack->aggregate_store_lat_int / (stack->stores_int * 1000.0) : NAN); // Store 
 	for (int level = 1; level <= max_mod_level - 1; level++)
 		fprintf(stack->report_file, ",%.3f", stack->prefs_per_level_int[level] ?
-				(double) stack->aggregate_pref_lat_per_level_int[level] / (stack->prefs_per_level_int[level] * 1000.0) : NAN); /* Prefetches (per level) */
+				(double) stack->aggregate_pref_lat_per_level_int[level] / (stack->prefs_per_level_int[level] * 1000.0) : NAN); // Prefetches (per level) 
 
 	fprintf(stack->report_file, ",%.3f", ipc_glob);
 	fprintf(stack->report_file, ",%.3f", ipc_alone_cache_glob);
@@ -1122,17 +1131,18 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 	fprintf(stack->report_file, ",%lld", mm_read_accesses);
 	fprintf(stack->report_file, ",%lld", mm_pref_accesses);
 	fprintf(stack->report_file, ",%lld", mm_write_accesses);
-
+	
 	/* Dispatch slots */
 	for (int i = 0; i < x86_dispatch_stall_max; i++)
 		fprintf(stack->report_file, ",%.3f", dispatch_stall_int[i]);
 
 	/* More stats per cache level */
+	
 	for (int level = 1; level <= max_mod_level - 1; level++)
 	{
 		int i;
-		int assigned_ways = 0; /* Assigned ways per set at this point */
-		double used_ways = 0; /* Average used ways per set at this point */
+		int assigned_ways = 0; // Assigned ways per set at this point 
+		double used_ways = 0; // Average used ways per set at this point 
 		double mpki_int = num_committed_uinst_int ? stack->misses_per_level_int[level] / (num_committed_uinst_int / 1000.0) : 0.0;
 
 		fprintf(stack->report_file, ",%lld", stack->hits_per_level_int[level]);
@@ -1150,15 +1160,15 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 		fprintf(stack->report_file, ",%lld", stack->atd_cm_ah_per_level_int[level]);
 		fprintf(stack->report_file, ",%lld", stack->atd_ch_am_per_level_int[level]);
 		fprintf(stack->report_file, ",%.3f", mpki_int);
-		fprintf(stack->report_file, ",%.3f", stack->prefs_per_level_int[level] ? /* Pref ACC */
+		fprintf(stack->report_file, ",%.3f", stack->prefs_per_level_int[level] ? // Pref ACC 
 				(double) stack->useful_prefs_per_level_int[level] / stack->prefs_per_level_int[level] : NAN);
-		fprintf(stack->report_file, ",%.3f", stack->prefs_per_level_int[level] + stack->misses_per_level_int[level] ? /* Pref COV */
+		fprintf(stack->report_file, ",%.3f", stack->prefs_per_level_int[level] + stack->misses_per_level_int[level] ? // Pref COV 
 				(double) stack->useful_prefs_per_level_int[level] / (stack->prefs_per_level_int[level] + stack->misses_per_level_int[level]) : NAN);
-		fprintf(stack->report_file, ",%.3f", stack->useful_prefs_per_level_int[level] ? /* Pref Lateness */
+		fprintf(stack->report_file, ",%.3f", stack->useful_prefs_per_level_int[level] ? // Pref Lateness 
 				(double) stack->late_prefs_per_level_int[level] / stack->useful_prefs_per_level_int[level] : NAN);
 	
 
-		/* Iterate reachable modules */
+		// Iterate reachable modules 
 		LIST_FOR_EACH(X86_THREAD.reachable_modules_per_level[level], i)
 		{
 			struct mod_t *mod = list_get(X86_THREAD.reachable_modules_per_level[level], i);
@@ -1168,7 +1178,7 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 
 			assert(mod);
 
-			/* Sample sets and count ways used */
+			// Sample sets and count ways used 
 			for (int set = cache->num_sets - 1; set > 0; set /= 8)
 			{
 				for (int way = 0; way < cache->assoc; way++)
@@ -1181,8 +1191,8 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 			}
 			used_ways += (double) used_ways_tmp / sampled_sets;
 
-			/* In each module all the threads have at least one way allocated or a negative value
-			 * if there is no partitioning or it is disabled, so assigned_ways cannot be 0. */
+			// In each module all the threads have at least one way allocated or a negative value
+			 // if there is no partitioning or it is disabled, so assigned_ways cannot be 0. 
 			assert(mod->cache->assigned_ways[thread_id] != 0);
 			if (mod->cache->partitioning.policy)
 				assigned_ways += mod->cache->assigned_ways[thread_id];
@@ -1192,8 +1202,9 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 
 
 	}	
-	 /* Hugo printing l1_lru_hits */
+	 // Hugo printing l1_lru_hits 
         fprintf(stack->report_file, ",%lld", l1_lru_hits);
+	
 	/*Printing header penalty array*/
 	//for(int w = 0; w <= 127; w++ ){
 	//	fprintf(stack->report_file, ",%lld",(long long int) last_used_set.added_cycles[w]);

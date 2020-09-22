@@ -1231,6 +1231,7 @@ static void mem_config_read_modules(struct config_t *config)
 					mem_err_config_note);
 		//Hugo reading  new vars in the config
        		//mov_cabezal = config_read_int(config, section, "PenalizacionCabezal", 0);
+       		RTM = 0;
         	RTM = config_read_int(config, section, "RTM", 0);
 		
 
@@ -1244,11 +1245,12 @@ static void mem_config_read_modules(struct config_t *config)
 		mod->headers = config_read_int(config, section, "headers", 0);
 		mod->entrelazado = config_read_int(config, section, "entrelazado", 0); 
 		mod->WU = config_read_int(config, section, "WU", 0);
-		mod->WU_f = 0; 
+		mod->WU_f = 0;
+		mod->submodulos = config_read_int(config, section, "submodulos", 1); 
 
 		if (mod->RTM)
                 {
-                        mod->RTM_data = RTM_data_create(mod->cache->num_sets, mod->cache->assoc, mod->headers);
+                        mod->RTM_data = RTM_data_create(mod->cache->num_sets, mod->cache->assoc, mod->headers,mod->submodulos);
 			mod_RTM = mod;
                 }
 		//End

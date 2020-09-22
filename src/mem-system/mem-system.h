@@ -54,8 +54,9 @@ struct dram_system_t
 /*
  * Global Variables
  */
-
-
+//Hugo
+extern char *own_report_file_name;
+//
 extern char *mem_report_file_name;
 
 

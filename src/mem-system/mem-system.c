@@ -54,6 +54,8 @@ int mem_peer_transfers;
 
 int EV_MAIN_MEMORY_TIC;
 
+int rob_mem_cont = 0;
+int ciclos_tot = 0;
 /* Frequency domain, as returned by function 'esim_new_domain'. */
 int mem_frequency = 3000;
 int mem_domain_index;
@@ -62,6 +64,7 @@ struct mem_system_t *mem_system;
 
 char *mem_report_file_name = "";
 char *main_mem_report_file_name = "";
+char *own_report_file_name = "";
 
 
 /*
@@ -430,8 +433,11 @@ void mem_system_dump_report(void)
 	struct cache_t *cache;
 
 	FILE *f;
+	FILE *fh;
 
 	int i;
+	int sum_pen = 0;
+	long long int aux1 = 0;
 
 	/* Open file */
 	f = file_open_for_write(mem_report_file_name);
@@ -584,7 +590,81 @@ void mem_system_dump_report(void)
 		net_dump_report(net, f);
 	}
 
+
+	//Dumping Hugo stats	
+	
+	fh = file_open_for_write(own_report_file_name);
+	//Headers
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "Hit-Ratio-%s,",mod->name);
+	}
+	
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+		if(mod->RTM)
+		{
+			break;
+		}
+		       
+        }
+	if(mod->RTM )
+        {
+
+                for( int i = 0; i < mod->cache->assoc   ; i++ )
+                {
+                        for(int w = 0; w < mod->cache->num_sets/mod->headers  ;w++ )
+                        {
+                                fprintf(fh, "%s-%s-%d-%s-%d,", mod->name,"via",i, "ciclos-penalizacion", w);
+                        }
+                }
+               
+                fprintf(fh, "%s","Cantidad de desplazamientos totales,");
+        }
+	fprintf(fh,"Ciclos penalizacion ROB,");	
+	fprintf(fh,"Ciclos de ejecucion\n");
+	
+	//DATA
+		
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "%.4g,",mod->accesses ? (double) mod->hits / mod->accesses : 0.0);
+
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {       mod = list_get(mem_system->mod_list, i);
+                if(mod->RTM)
+                {
+                        break;
+                }	
+	}
+	if(mod->RTM)
+        {
+                for(int i = 0; i< mod->cache->assoc ;i++){
+                        for(int j = 0; j < mod->cache->num_sets/mod->headers;j++){
+				for(int k = 0; k < mod->submodulos;k++){
+					sum_pen += mod->RTM_data[k].penalizations[i][j];
+                                	//fprintf(fh, "%lld,", (long long int) mod->RTM_data->penalizations[i][j]);
+				}
+				fprintf(fh, "%lld,", (long long int) sum_pen);
+                        }
+                }
+              	for(int i = 0; i < mod->submodulos;i++){ 
+                	aux1 += mod->RTM_data[i].total_shifts;
+		}
+		fprintf(fh, "%lld,", aux1);
+        }
+
+	fprintf(fh,"%d,",rob_mem_cont );
+	fprintf(fh,"%d\n", ciclos_tot); 
+	
 	/* Done */
+	fclose(fh);
 	fclose(f);
 }
 

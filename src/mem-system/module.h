@@ -436,7 +436,8 @@ struct mod_t
 	int headers;
 	int WU;
 	int WU_f;
-	int entrelazado;	
+	int entrelazado;
+	int submodulos;	
 	struct RTM_data_t *RTM_data;
 	enum RTM_type_t RTM_type;
 	
@@ -507,6 +508,6 @@ void mod_interval_report(struct mod_t *mod);
 
 //Header penalization, Hugo
 //struct mod_last_used_set_t *mod_last_used_set_create(int num_sets, int assoc);
-struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers);
+struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers, int submodules);
 void reset_shift_stats();
 #endif

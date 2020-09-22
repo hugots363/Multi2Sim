@@ -256,6 +256,8 @@ struct x86_cpu_t *x86_cpu;
 //Hugo global var
 long long WU;
 int WU_f = 0;
+extern int  rob_mem_cont;
+extern int ciclos_tot;
 
 /* Trace */
 int x86_trace_category;
@@ -505,6 +507,8 @@ static void x86_cpu_dump_report(void)
 	fprintf(f, "; Global statistics\n");
 	fprintf(f, "[ Global ]\n\n");
 	fprintf(f, "Cycles = %lld\n", arch_x86->cycle);
+	//Var aux
+	ciclos_tot = arch_x86->cycle;	
 	fprintf(f, "Time = %.2f\n", (double) now / 1000000);
 	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) arch_x86->cycle / now * 1000000 : 0.0);
 	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
@@ -1010,6 +1014,8 @@ void x86_cpu_dump_summary(FILE *f)
 	fprintf(f, "CommittedMicroInstructions = %lld\n", x86_cpu->num_committed_uinst);
 	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
+	//Hugo printing new vars to x86 global
+	//fprintf(f,"Ciclos de ejecución = %.4g\n", arch_x86->cycle);
 }
 
 
@@ -1292,6 +1298,8 @@ void x86_cpu_reset_stats(void)
 	x86_cpu->num_branch_uinst = 0;
 	x86_cpu->num_mispred_branch_uinst = 0;
 
+	//Hugo adding reset for rob counter
+	 rob_mem_cont = 0;	
 	/* Reset x86 ctxs stats */
 	x86_ctx_all_reset_stats();
 
@@ -1305,6 +1313,7 @@ static void x86_cpu_thread_interval_report_init(int core, int thread)
 	struct x86_thread_report_stack_t *stack;
 	char interval_report_file_name[MAX_PATH_SIZE];
 	int ret;
+	printf("P1 en thread interval report init\n");
 
 	/* Create new stack */
 	stack = xcalloc(1, sizeof(struct x86_thread_report_stack_t));
@@ -1363,7 +1372,7 @@ static void x86_cpu_thread_interval_report(int core, int thread)
 	double interthread_penalty_cycles_int;
 	double dispatch_total_slots = 0;
 	double dispatch_stall_int[x86_dispatch_stall_max];
-
+	printf("P2 CPU thread interval report\n");	
 	/* Ratio of usage and stall of dispatch slots */
 	for (int i = 0; i < x86_dispatch_stall_max; i++)
 	{
