@@ -168,8 +168,7 @@ int EV_MOD_NMOESI_FIND_AND_LOCK_MEM_CONTROLLER_FINISH;
 
 int EV_MOD_ATD_DELAYED_SET;
 
-//Hugo dir translations
-extern int WU_f;
+//Hugo dir translation;
 int ent_to_direct(int dir_ent,int ncab ,int num_sets)
 {
 	return ((dir_ent % ncab)*(num_sets/ncab) + (dir_ent/ncab)%(num_sets/ncab) );
