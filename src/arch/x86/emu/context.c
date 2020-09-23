@@ -875,7 +875,7 @@ void x86_ctx_gen_proc_cpuinfo(struct x86_ctx_t *ctx, char *path, int size)
 
 void x86_ctx_report_stack_reset_stats(struct x86_ctx_report_stack_t *stack)
 {
-	FILE *f = x86_ctx_get(stack->pid)->report_stack->report_file;
+	//FILE *f = x86_ctx_get(stack->pid)->report_stack->report_file;
 
 	stack->num_committed_uinst = 0;
 	stack->last_cycle = esim_cycle();
@@ -884,7 +884,7 @@ void x86_ctx_report_stack_reset_stats(struct x86_ctx_report_stack_t *stack)
 	stack->mm_pref_accesses = 0;
 
 	/* Erase report file */
-	fseeko(f, 0, SEEK_SET);
+	//fseeko(f, 0, SEEK_SET);
 
 	/* Print header */
 	/* TODO */

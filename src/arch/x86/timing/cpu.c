@@ -255,7 +255,6 @@ char *x86_config_help =
 struct x86_cpu_t *x86_cpu;
 //Hugo global var
 long long WU;
-int WU_f = 0;
 extern int  rob_mem_cont;
 extern int ciclos_tot;
 
@@ -1178,11 +1177,13 @@ int x86_cpu_run(void)
 	}
  	//Hugo setting the WU	
  	//Cobnd = WU+FF
-	if( (arch_x86->inst_count >= (WU + x86_cpu_fast_forward_count))  && !WU_f)
+	if( (arch_x86->inst_count >= (WU + x86_cpu_fast_forward_count)) && WU )
 	{
+		//Problemas con este reset
+		printf("Esim-time is = %lld\n",esim_time);
 		reset_shift_stats();
 		x86_cpu_reset_stats();
-		WU_f = 1;
+		WU = 0;
 	}
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && x86_cpu->num_committed_inst >= x86_emu_max_inst)
