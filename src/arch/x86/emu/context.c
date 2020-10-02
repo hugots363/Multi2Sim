@@ -54,6 +54,7 @@
 
 
 int x86_ctx_debug_category;
+double stall_rob_aux;
 
 
 static struct str_map_t x86_ctx_status_map =
@@ -923,7 +924,7 @@ void x86_ctx_interval_report_init(struct x86_ctx_t *ctx)
 	struct x86_ctx_report_stack_t *stack;
 	char interval_report_file_name[MAX_PATH_SIZE];
 	int ret;
-	printf("P1 en ctx_interval_report_init\n");
+	
 	/* Stats interval reporting disabled */
 	if (!epoch_length)
 		return;
@@ -989,6 +990,7 @@ void x86_ctx_interval_report_init(struct x86_ctx_t *ctx)
 	for (int i = 0; i < x86_dispatch_stall_max; i++)                                       /* Where the dispatch slots are going */
 		fprintf(stack->report_file, ",pid%d-%s", ctx->pid, str_map_value(&x86_dispatch_stall_map, i));
 	
+	
 	for (int level = 1; level <= max_mod_level - 1; level++)
 	{
 		fprintf(stack->report_file, ",pid%d-l%d-%s", ctx->pid, level, "hits-int");
@@ -1035,6 +1037,9 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 	long long mm_pref_accesses;
 	/*Hugo */
 	long long l1_lru_hits;
+	
+
+
 	double ipc_int;
 	double ipc_alone_int;
 	double ipc_glob;
@@ -1051,7 +1056,7 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 	double interthread_dram_penalty_cycles_int;
 	
 	
-	printf("P2 en ctx interval report \n");	
+	
 	
 	num_committed_uinst_int = ctx->num_committed_uinst - stack->num_committed_uinst;
 	ipc_int = (double) num_committed_uinst_int / cycles_int;
@@ -1063,6 +1068,7 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 	for (int i = 0; i < x86_dispatch_stall_max; i++)
 	{
 		dispatch_stall_int[i] = ctx->dispatch_stall[i] - stack->dispatch_stall[i];
+		
 		dispatch_total_slots += dispatch_stall_int[i];
 	}
 	
@@ -1133,8 +1139,11 @@ void x86_ctx_interval_report(struct x86_ctx_t *ctx)
 	fprintf(stack->report_file, ",%lld", mm_write_accesses);
 	
 	/* Dispatch slots */
-	for (int i = 0; i < x86_dispatch_stall_max; i++)
+	for (int i = 0; i < x86_dispatch_stall_max; i++){
 		fprintf(stack->report_file, ",%.3f", dispatch_stall_int[i]);
+		if(i == 4){stall_rob_aux += dispatch_stall_int[i];}
+		//if(stall_rob_aux == 456){stall_rob_aux = 456;}
+	}
 
 	/* More stats per cache level */
 	

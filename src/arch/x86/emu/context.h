@@ -23,7 +23,8 @@
 #include <arch/x86/asm/asm.h>
 #include <arch/x86/timing/cpu.h>
 
-
+//Hugo
+//extern double stall_rob_aux; 
 /* Forward declarations */
 struct bit_map_t;
 struct x86_ctx_t;

@@ -48,6 +48,8 @@
  * Global Variables
  */
 
+
+
 int mem_debug_category;
 int mem_trace_category;
 int mem_peer_transfers;
@@ -65,7 +67,7 @@ struct mem_system_t *mem_system;
 char *mem_report_file_name = "";
 char *main_mem_report_file_name = "";
 char *own_report_file_name = "";
-
+double stall_rob_aux;
 
 /*
  * Memory System Object
@@ -438,6 +440,7 @@ void mem_system_dump_report(void)
 	int i;
 	int sum_pen = 0;
 	long long int aux1 = 0;
+	//double stall_rob_aux = 0; 
 
 	/* Open file */
 	f = file_open_for_write(mem_report_file_name);
@@ -624,7 +627,9 @@ void mem_system_dump_report(void)
                
                 fprintf(fh, "%s","Cantidad de desplazamientos totales,");
         }
-	fprintf(fh,"Ciclos penalizacion ROB,");	
+	fprintf(fh,"Ciclos penalizacion ROB,");
+	fprintf(fh, "Ciclos pen ROB propios,");
+	//fprintf(fh, ",%.3f", dispatch_stall_int[i]);	
 	fprintf(fh,"Ciclos de ejecucion\n");
 	
 	//DATA
@@ -650,8 +655,10 @@ void mem_system_dump_report(void)
 				for(int k = 0; k < mod->submodulos;k++){
 					sum_pen += mod->RTM_data[k].penalizations[i][j];
                                 	//fprintf(fh, "%lld,", (long long int) mod->RTM_data->penalizations[i][j]);
+				
 				}
 				fprintf(fh, "%lld,", (long long int) sum_pen);
+				sum_pen = 0;
                         }
                 }
               	for(int i = 0; i < mod->submodulos;i++){ 
@@ -660,7 +667,9 @@ void mem_system_dump_report(void)
 		fprintf(fh, "%lld,", aux1);
         }
 
-	fprintf(fh,"%d,",rob_mem_cont );
+	
+	fprintf(fh, "%.3f,", stall_rob_aux);
+	 fprintf(fh,"%d,",rob_mem_cont );
 	fprintf(fh,"%d\n", ciclos_tot); 
 	
 	/* Done */
