@@ -63,6 +63,7 @@ extern struct mod_t *mod_RTM;
 extern int  rob_mem_cont; 
 
 
+
 /* Event used for updating the state of adaptative prefetch policy */
 int EV_MOD_ADAPT_PREF;
 
@@ -82,6 +83,8 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers, int sub
 {
 	
 	struct RTM_data_t *RTM_data = xcalloc(submodulos,sizeof(struct RTM_data_t));
+	int headsxsub = headers/submodulos;
+	int setsxsub = num_sets/submodulos;
 	
 	for(int i = 0; i<submodulos ;i++){
 		RTM_data[i].last_read_set = 0;
@@ -92,14 +95,17 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers, int sub
 		RTM_data[i].pen_miss = xcalloc(assoc, sizeof(int*));	
 
 		for(int j = 0; j < assoc; j++){
-			RTM_data[i].penalizations[j] = xcalloc((num_sets/headers), sizeof(int)); // /submodules¿?
-			RTM_data[i].pen_hit[j] = xcalloc((num_sets/headers), sizeof(int));
-			RTM_data[i].pen_miss[j] = xcalloc((num_sets/headers), sizeof(int));
+			RTM_data[i].penalizations[j] = xcalloc((num_sets), sizeof(int)); // /submodules¿?
+			RTM_data[i].pen_hit[j] = xcalloc((num_sets), sizeof(int));
+			RTM_data[i].pen_miss[j] = xcalloc((num_sets), sizeof(int));
 		}                                                                                                                                     
-		for(int j = 0; j<headers;j++){
-                	RTM_data[i].headers_pos[j] = ((num_sets/headers)/2 -1 + (num_sets/headers)*j);
+		for(int j = 0; j < headsxsub ;j++){
+				//if(j == 0){RTM_data[i].headers_pos[j] = 0;}
+                		//else {RTM_data[i].headers_pos[j] = ((num_sets/headers)/2 -1 + (num_sets/headers)*j);}
+                		RTM_data[i].headers_pos[j] = (setsxsub/headsxsub)/2  + ( setsxsub/headsxsub )*j + (i*setsxsub);
+				//printf("Cabezal %d submodulo %d en %d , Index= %d \n",j,i,RTM_data[i].headers_pos[j], (setsxsub/headsxsub)/2  + ( setsxsub/headsxsub )*j);
+						
         	}
-
 		for (int j = 0; j < assoc; j++){
                 	for (int k = 0; k < num_sets/headers; k++){
                         	RTM_data[i].penalizations[j][k] = 0;
@@ -211,6 +217,9 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	mod->mc_id = -1; /* By default */
 	/*Hugo initializating RTM_type*/
 	//mod->RTM_type = RTM_type;
+	mod->hits_p = 0;
+	mod->misses_p = 0;
+	mod->accesses_p = 0;
 
 
 	return mod;

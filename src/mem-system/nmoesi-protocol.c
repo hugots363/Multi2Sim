@@ -1855,6 +1855,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	int set_direct = 0;
 	int hit_set = 0;
 	int desp = 0;
+	int submod = 0;
 	int desp_menor = 999999;
 	//int header_lec = 0;
 	//int sets_per_h = 0;
@@ -1862,7 +1863,12 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	int desp_binf = 99999;
 	int nheaders = mod->headers;
 	int header = 0;
-	int submod = 0;
+	int set_mapped_0 = 0;
+	int headsxsub = 0;
+	int setsxsub = 0;
+	int set_ent = 0;
+	//int submod = 0;
+	static int contador = 0;
 	
 
 
@@ -1950,7 +1956,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		struct mod_port_t *port = stack->port;
 		struct dir_lock_t *dir_lock;
 		//struct cache_block_t *block_lru;
-		;
+			
 
 		assert(stack->port);
 		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_time, stack->id,
@@ -1965,12 +1971,13 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 		/* Look for block */
 		stack->hit = mod_find_block(mod, stack->addr, &stack->set, &stack->way, &stack->tag, &stack->state);
+		//int aux_hit = stack->hit;
 		/* Si es hit y mod->level == 1 */
 		/* Comprobar si lru */
 		/* ctx->l1_lru_hits++ */
 		/* cache_get_block  2*/
 		/* blk = mod->cache->sets[stack->set].ways[stack->way] */ 
-	
+			
 
 		if (stack->request_dir == mod_request_up_down)
 		{
@@ -1988,7 +1995,15 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 		/* If there is a background stack, no other stack can be retrieving the same block */
 		assert(!(stack->background && stack->hit));
-
+		//Hugo stats
+		if(stack->hit){
+			mod->hits_p++;
+			mod->accesses_p++;
+		}
+		else{
+			mod->misses_p++;
+			mod->accesses_p++;
+		}
 		/* Statistics */
 		mod->accesses++;
 		if (stack->read)
@@ -2153,25 +2168,26 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		}
 				
                 if(  mod->RTM  )
-		{	/* 
-			 fprintf(stderr,"Directo, enlazado\n");
-			 for(int i = 0; i < cache->num_sets;i++ ){
-                                        fprintf(stderr,"%d ---------------------%d\n",ent_to_direct(i,nheaders,mod->cache->num_sets),i);
-                                }
-			*/
+		{	 
+			 //fprintf(stderr,"Directo, enlazado\n");
+			 //for(int i = 0; i < cache->num_sets;i++ ){
+                          //              fprintf(stderr,"%d ---------------------%d\n",ent_to_direct(i,nheaders,mod->cache->num_sets),i);
+                          //      }
+			
 
 			/* Calculating header penalty, */
-			/*
-			if( WU_f )
-			{
 				
-				fprintf(stderr,"%lld\t%s\t%x\t%d\t%d\t%d\t",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
-                        	for(int i = 0; i < mod->headers;i++ ){
-                               		fprintf(stderr,"%d\t",mod->RTM_data->headers_pos[i]);
+				//fprintf(stderr,"%lld\t%s\t%x\t%d\t%d\t%d\t",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+			/*	
+				FILE *fd = fopen("prueba.txt","a");		
+                        	for(int i = 0; i < mod->headers/mod->submodulos;i++ ){
+                               		fprintf(stderr,"%d\t",mod->RTM_data[0].headers_pos[i]);
+					fprintf(fd,"%u\t",mod->RTM_data[0].headers_pos[i]);
                         	}
-				
-			}
-			*/
+				fprintf(fd,"\n");
+				fclose(fd);
+			*/	
+		
 			
                  
 			
@@ -2229,28 +2245,38 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 			}
 			if(mod->RTM_type ==3)
-			{
+			{	
+					contador++;
+					headsxsub = nheaders/mod->submodulos;
+					setsxsub = mod->cache->num_sets/mod->submodulos;
 					hit_set = stack->set;
+					int set_f = 0;
 				
                                 	set_direct = hit_set;
-					if(set_direct == 0){submod = 0;}
-					else{submod = set_direct/(mod->cache->num_sets/mod->submodulos);}					
+					//if(set_direct == 0){submod = 0;}
+					submod = (set_direct/(setsxsub));
+					//printf("submod 0= %d", submod);
+					//Translate to mapping 0
+					set_mapped_0 = set_direct % (setsxsub);					
 					if(mod->entrelazado)
                                 	{
-						//fprintf(stderr,"ent:%d->",hit_set);
-                                        	set_direct = ent_to_direct(hit_set,nheaders ,mod->cache->num_sets);
+						//fprintf(stderr,"ent:%d->",hit_set)
+                                        	//set_ent = ent_to_direct(set_mapped_0,headsxsub,setsxsub);i
+                                        	set_ent = ent_to_direct(set_mapped_0,headsxsub,setsxsub);
 						//fprintf(stderr,"direct:%d\t",set_direct);
                                 	}
+					if(mod->entrelazado){set_f = set_ent;}
+					else{set_f = set_mapped_0;}
 					
 					desp_menor = 9999;	
 					//Desbordamiento: 0->No hay 1->Desbordamiento superior 2->Desbordamiento inferior	
 					
-					for(int w = 0; w<mod->headers;w++ )
+					for(int w = 0; w< headsxsub;w++ )
 					{
 					
                                         //Distancia linea
-						desp_bsup = (mod->cache->num_sets - mod->RTM_data[submod].headers_pos[w] + set_direct)%mod->cache->num_sets;
-						desp_binf = (mod->RTM_data[submod].headers_pos[w] + mod->cache->num_sets - set_direct)%mod->cache->num_sets;
+						desp_bsup = (setsxsub - mod->RTM_data[submod].headers_pos[w] + set_f )%setsxsub;
+						desp_binf = (mod->RTM_data[submod].headers_pos[w] + setsxsub - set_f)%setsxsub;
 						if(desp_bsup <= desp_binf){desp = desp_bsup;} 
 						else{desp = -desp_binf;}
 						// ¿Desbordamiento?:superior , inferior o nada
@@ -2265,17 +2291,19 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 					
 				//Aux = desplazamiento 				
 				 //assert(aux <= sets_per_h);
-				 mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)] ++; 
+				 //if(aux_hit != stack->hit){printf("CAMBIA\n");}
+				 mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]++;
 				 if(stack->hit){ mod->RTM_data[submod].pen_hit[stack->way][abs(desp_menor)]++; }
 				 else{mod->RTM_data[submod].pen_miss[stack->way][abs(desp_menor)]++;}
 				 mod->RTM_data[submod].total_shifts += abs(desp_menor);
 
+				//printf("Set_direct = %d, set_ent = %d, mapped_0 = %d, submod = %d, contador= %d, desp_menor= %d, via= %d, valor=%d \n",set_direct,set_ent,set_mapped_0,submod,contador,desp_menor,stack->way,mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]);
+				
 
-			
 				//Actualizar posicion cabezales				
-				for(int w = 0; w < nheaders;w++)
+				for(int w = 0; w < headsxsub;w++)
                                 {
-                                	mod->RTM_data[submod].headers_pos[w] =  (mod->RTM_data[submod].headers_pos[w]+desp_menor)%mod->cache->num_sets;
+                                	mod->RTM_data[submod].headers_pos[w] = ( (mod->RTM_data[submod].headers_pos[w]+desp_menor)%setsxsub);
                                 }
 				desp = desp_menor;      
                                                 
@@ -2292,9 +2320,9 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 					
 			//[DEBUG]
 			//
-				/*
-				if( WU_f  )
-				{	
+				
+			
+				/*	
 				
 					if(mod->RTM_type==1)
                                         	fprintf(stderr,"\t%d\t",desp);
@@ -2303,7 +2331,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                                 	if(mod->RTM_type==3)
                                         	fprintf(stderr,"\t%d\t  ",desp_menor);
                                 	for(int i = 0; i < mod->headers;i++){
-                                        	fprintf(stderr,"%d\t",mod->RTM_data->headers_pos[i]);
+                                        	fprintf(stderr,"%d\t",mod->RTM_data[0].headers_pos[i]);
                                 	}
                                 	fprintf(stderr,"%d\t",header);
                                 	if(stack->read){fprintf(stderr,"READ\t");}
@@ -2317,7 +2345,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                                         	fprintf(stderr,"DL\t");
                                		fprintf(stderr,"\n");
 				
-				}
+			
 				*/
 				
 		}

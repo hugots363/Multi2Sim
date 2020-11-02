@@ -34,12 +34,12 @@ extern int max_mod_level;
 
 struct RTM_data_t
 {
-	int last_read_set;
-	int *headers_pos;
-	int **penalizations;
-	int **pen_hit;
-	int **pen_miss; 
-	long long int total_shifts;	
+	unsigned int last_read_set;
+	unsigned int *headers_pos;
+	unsigned int **penalizations;
+	unsigned int **pen_hit;
+	unsigned int **pen_miss; 
+	long long unsigned int total_shifts;	
 }; 
 
 extern enum RTM_type_t
@@ -351,6 +351,9 @@ struct mod_t
 	
 	/*Hugo MRU*/
 	long long mru_hits;
+	long long hits_p;
+	long long misses_p;
+	long long accesses_p;
 
 	/* Stats not approved */
 	long long accesses;

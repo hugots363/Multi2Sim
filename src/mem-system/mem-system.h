@@ -25,8 +25,9 @@
 
 /*
  * Memory System Object
- */
+ */ 
 
+extern double stall_rob_aux;
 
 struct mem_system_t
 {

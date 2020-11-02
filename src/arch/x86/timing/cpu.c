@@ -255,7 +255,7 @@ char *x86_config_help =
 struct x86_cpu_t *x86_cpu;
 //Hugo global var
 long long WU;
-extern int  rob_mem_cont;
+extern double  stall_rob_aux;
 extern int ciclos_tot;
 
 /* Trace */
@@ -1300,7 +1300,7 @@ void x86_cpu_reset_stats(void)
 	x86_cpu->num_mispred_branch_uinst = 0;
 
 	//Hugo adding reset for rob counter
-	 rob_mem_cont = 0;	
+	 stall_rob_aux = 0;	
 	/* Reset x86 ctxs stats */
 	x86_ctx_all_reset_stats();
 
@@ -1314,7 +1314,7 @@ static void x86_cpu_thread_interval_report_init(int core, int thread)
 	struct x86_thread_report_stack_t *stack;
 	char interval_report_file_name[MAX_PATH_SIZE];
 	int ret;
-	printf("P1 en thread interval report init\n");
+	
 
 	/* Create new stack */
 	stack = xcalloc(1, sizeof(struct x86_thread_report_stack_t));
@@ -1372,8 +1372,7 @@ static void x86_cpu_thread_interval_report(int core, int thread)
 	double ipc_alone_glob;
 	double interthread_penalty_cycles_int;
 	double dispatch_total_slots = 0;
-	double dispatch_stall_int[x86_dispatch_stall_max];
-	printf("P2 CPU thread interval report\n");	
+	double dispatch_stall_int[x86_dispatch_stall_max];	
 	/* Ratio of usage and stall of dispatch slots */
 	for (int i = 0; i < x86_dispatch_stall_max; i++)
 	{
