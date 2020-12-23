@@ -54,6 +54,8 @@ enum mod_message_type_t
 /* Stack */
 struct mod_stack_t
 {
+	//Hugo, to know if the access is to data o to instruction
+	int access_type;
 	long long id;
 	enum mod_access_kind_t access_kind;
 	int *witness_ptr;

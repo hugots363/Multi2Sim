@@ -36,10 +36,10 @@ struct RTM_data_t
 {
 	unsigned int last_read_set;
 	unsigned int *headers_pos;
-	unsigned int **penalizations;
-	unsigned int **pen_hit;
-	unsigned int **pen_miss; 
-	long long unsigned int total_shifts;	
+	unsigned long long int **penalizations;
+	unsigned long long int **pen_hit;
+	unsigned long long int **pen_miss; 
+	unsigned long long int total_shifts;
 }; 
 
 extern enum RTM_type_t
@@ -354,6 +354,13 @@ struct mod_t
 	long long hits_p;
 	long long misses_p;
 	long long accesses_p;
+	long long hits_data;
+	long long hits_instructions;
+	long long misses_data;
+	long long misses_instructions;
+	long long accesses_invalid;
+	long long accesses_up_down;
+	long long accesses_down_up;
 
 	/* Stats not approved */
 	long long accesses;
@@ -460,7 +467,7 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 int mod_can_access(struct mod_t *mod, unsigned int addr);
 
 int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr, int *way_ptr,
-	int *tag_ptr, int *state_ptr);
+	int *tag_ptr, int *state_ptr,int *stack_access_type,int *blk_access_type);
 
 void mod_set_prefetched_bit(struct mod_t *mod, unsigned int addr, int val);
 int mod_get_prefetched_bit(struct mod_t *mod, unsigned int addr);

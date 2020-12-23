@@ -75,6 +75,8 @@ struct cache_block_t
 	int way;
 	int prefetched;
 	int thread_id; /* Thread who has put the block */
+	//Hugo guessing access type
+	int access_type;	
 
 	enum cache_block_state_t state;
 };

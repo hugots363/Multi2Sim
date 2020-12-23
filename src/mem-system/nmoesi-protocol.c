@@ -45,6 +45,7 @@
 #include "prefetcher.h"
 #include "stream-prefetcher.h"
 
+#include "nmoesi-protocol.h"
 /* Events */
 
 int EV_MOD_NMOESI_LOAD;
@@ -168,6 +169,10 @@ int EV_MOD_NMOESI_FIND_AND_LOCK_MEM_CONTROLLER_FINISH;
 
 int EV_MOD_ATD_DELAYED_SET;
 
+unsigned long long int  hit_0 = 0;
+unsigned long long int hit_1 = 0;
+unsigned long long int hit_2 = 0;
+
 //Hugo dir translation;
 int ent_to_direct(int dir_ent,int ncab ,int num_sets)
 {
@@ -250,6 +255,7 @@ void mod_handler_pref(int event, void *data)
 			new_stack = mod_stack_create(stack->id, mod, stack->addr, EV_MOD_PREF_FINISH, stack, stack->prefetch);
 			new_stack->client_info = mod_client_info_clone(stack->mod, stack->client_info);
 			new_stack->retry = 0;
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_NMOESI_INVALIDATE_SLOT, new_stack, 0);
 			return;
 		}
@@ -273,6 +279,7 @@ void mod_handler_pref(int event, void *data)
 		new_stack->request_dir = mod_request_up_down;
 		new_stack->pref_stream = stack->pref_stream;
 		new_stack->pref_slot = stack->pref_slot;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_PREF_FIND_AND_LOCK, new_stack, 0);
 		return;
 	}
@@ -332,6 +339,7 @@ void mod_handler_pref(int event, void *data)
 		new_stack->peer = mod;
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
 		return;
 	}
@@ -566,6 +574,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 		new_stack->request_dir = mod_request_up_down;
 		new_stack->access_kind = mod_access_load;
 		new_stack->event_queue_item = stack->event_queue_item;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
 		return;
 	}
@@ -634,6 +643,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 		new_stack->request_dir = mod_request_up_down;
 		new_stack->event_queue_item = stack->event_queue_item;
 		new_stack->src_atd_hit = stack->atd_hit; /* An L1 ATD hit should not be an ATD hit in L2 */
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
 
 		/* The prefetcher may be interested in this miss */
@@ -739,6 +749,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 			new_stack = mod_stack_create(stack->id, mod, stack->tag,
 				ESIM_EV_NONE, stack, 0);
 			new_stack->target_mod = low_mod;
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_ATD_DELAYED_SET, new_stack, low_mod->latency);
 		}
 		else if (stack->hit == 0 && stack->atd_hit == 1)
@@ -898,6 +909,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 		new_stack->request_dir = mod_request_up_down;
 		new_stack->access_kind = mod_access_store;
 		new_stack->event_queue_item = stack->event_queue_item;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
 
 		/* Set witness variable to NULL so that retries from the same
@@ -994,6 +1006,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 		new_stack->request_dir = mod_request_up_down;
 		new_stack->event_queue_item = stack->event_queue_item;
 		new_stack->src_atd_hit = stack->atd_hit; /* An L1 ATD hit should not be an ATD hit in L2 */
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
 
 		/* The prefetcher may be interested in this miss */
@@ -1043,6 +1056,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 			new_stack = mod_stack_create(stack->id, mod, stack->tag,
 				ESIM_EV_NONE, stack, 0);
 			new_stack->target_mod = low_mod;
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_ATD_DELAYED_SET, new_stack, low_mod->latency);
 		}
 		else if (stack->hit == 0 && stack->atd_hit == 1)
@@ -1185,6 +1199,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		new_stack->blocking = 1;
 		new_stack->nc_write = 1;
 		new_stack->retry = stack->retry;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
 		return;
 	}
@@ -1218,6 +1233,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 				EV_MOD_NMOESI_NC_STORE_ACTION, stack, stack->prefetch);
 			new_stack->set = stack->set;
 			new_stack->way = stack->way;
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_NMOESI_EVICT, new_stack, 0);
 			return;
 		}
@@ -1272,6 +1288,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 				EV_MOD_NMOESI_NC_STORE_MISS, stack, stack->prefetch);
 			new_stack->message = message_clear_owner;
 			new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_NMOESI_MESSAGE, new_stack, 0);
 		}
 		/* Modified and Owned states need to call read request because we've already
@@ -1285,6 +1302,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 			new_stack->nc_write = 1;
 			new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 			new_stack->request_dir = mod_request_up_down;
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
 		}
 
@@ -1421,7 +1439,10 @@ void mod_handler_nmoesi_pref_find_and_lock(int event, void *data)
 		struct dir_lock_t *dir_lock;
 		struct stream_block_t *sblock;
 		int slot;
-
+		
+		if( !strcmp(mod->name,"dl1-0") ){ stack->access_type = ACCESS_DATA;}
+                else if( !strcmp(mod->name,"il1-0") ){stack->access_type = ACCESS_INSTRUCTION;}
+		
 		assert(stack->port);
 		mem_debug("  %lld %lld 0x%x %s pref find and lock port\n", esim_time, stack->id, stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:pref_find_and_lock_port\"\n", stack->id, mod->name);
@@ -1437,7 +1458,7 @@ void mod_handler_nmoesi_pref_find_and_lock(int event, void *data)
 			sb = &pref->streams[stack->pref_stream];
 
 			/* Search in cache */
-			stack->hit = mod_find_block(mod, stack->addr, &stack->set, &stack->way, &stack->tag, &stack->state);
+			stack->hit = mod_find_block(mod, stack->addr, &stack->set, &stack->way, &stack->tag, &stack->state,&stack->access_type,NULL);
 
 			/* Block in cache */
 			if (stack->hit)
@@ -1684,6 +1705,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		new_stack->retry = 0;
 		new_stack->witness_ptr = stack->witness_ptr;
 		new_stack->request_dir = mod_request_up_down;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
 
 		/* Set witness variable to NULL so that retries from the same
@@ -1738,6 +1760,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		new_stack->prefetch = 1;
+		new_stack->access_type = stack->access_type;
 		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
 		return;
 	}
@@ -1955,8 +1978,10 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	{
 		struct mod_port_t *port = stack->port;
 		struct dir_lock_t *dir_lock;
+		int aux_access_type = -1;
 		//struct cache_block_t *block_lru;
-			
+		if( !strcmp(mod->name,"dl1-0") ){ stack->access_type = ACCESS_DATA;}
+                else if( !strcmp(mod->name,"il1-0") ){stack->access_type = ACCESS_INSTRUCTION;}	
 
 		assert(stack->port);
 		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_time, stack->id,
@@ -1970,7 +1995,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		ret->port_locked = 1;
 
 		/* Look for block */
-		stack->hit = mod_find_block(mod, stack->addr, &stack->set, &stack->way, &stack->tag, &stack->state);
+		stack->hit = mod_find_block(mod, stack->addr, &stack->set, &stack->way, &stack->tag, &stack->state,&stack->access_type,&aux_access_type);
 		//int aux_hit = stack->hit;
 		/* Si es hit y mod->level == 1 */
 		/* Comprobar si lru */
@@ -1995,15 +2020,6 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 		/* If there is a background stack, no other stack can be retrieving the same block */
 		assert(!(stack->background && stack->hit));
-		//Hugo stats
-		if(stack->hit){
-			mod->hits_p++;
-			mod->accesses_p++;
-		}
-		else{
-			mod->misses_p++;
-			mod->accesses_p++;
-		}
 		/* Statistics */
 		mod->accesses++;
 		if (stack->read)
@@ -2166,6 +2182,31 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			cache_set_transient_tag(mod->cache, stack->set, stack->way, stack->tag, stack->client_info);
 			cache_access_block(mod->cache, stack->set, stack->way);
 		}
+
+		//Hugo stats
+		if(stack->hit){
+			if(aux_access_type == ACCESS_DATA){
+				mod->hits_data++;
+			}
+			else if(aux_access_type == ACCESS_INSTRUCTION){
+				mod->hits_instructions++;
+			}
+			mod->hits_p++;
+			mod->accesses_p++;
+		}
+		else{
+			if(aux_access_type == ACCESS_DATA){
+                                mod->misses_data++;
+                        }
+                        else if(aux_access_type == ACCESS_INSTRUCTION){
+                                mod->misses_instructions++;
+                        }
+			mod->misses_p++;
+			mod->accesses_p++;
+		}
+		if(stack->request_dir == mod_request_down_up){mod->accesses_down_up++;}
+		else if(stack->request_dir == mod_request_up_down){mod->accesses_up_down++;}
+		else if(stack->request_dir == mod_request_invalid){mod->accesses_invalid++;}
 				
                 if(  mod->RTM  )
 		{	 
@@ -2226,7 +2267,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				
 			}
 			//SE
-			if( mod->RTM_type == 2)
+			else if( mod->RTM_type == 2)
 			{	
 				hit_set = stack->set;
                                 set_direct = hit_set;
@@ -2244,7 +2285,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				else{mod->RTM_data[submod].pen_miss[stack->way][abs(desp)]++;}				
 
 			}
-			if(mod->RTM_type ==3)
+			else if(mod->RTM_type ==3)
 			{	
 					contador++;
 					headsxsub = nheaders/mod->submodulos;
@@ -2293,7 +2334,12 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				 //assert(aux <= sets_per_h);
 				 //if(aux_hit != stack->hit){printf("CAMBIA\n");}
 				 mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]++;
-				 if(stack->hit){ mod->RTM_data[submod].pen_hit[stack->way][abs(desp_menor)]++; }
+				 if(stack->hit){ 
+					mod->RTM_data[submod].pen_hit[stack->way][abs(desp_menor)]++;
+					if(abs(desp_menor) == 0){hit_0++;}
+					else if(abs(desp_menor) == 1){hit_1++;}
+					else if(abs(desp_menor) == 2){hit_2++;} 
+				}
 				 else{mod->RTM_data[submod].pen_miss[stack->way][abs(desp_menor)]++;}
 				 mod->RTM_data[submod].total_shifts += abs(desp_menor);
 
@@ -2314,8 +2360,9 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				//assert(mod->RTM_data[submod].headers_pos[0] >= 0 && mod->RTM_data[submod].headers_pos[0] < mod->cache->num_sets);
 				//assert(mod->RTM_data[submod].headers_pos[1] >= 0 && mod->RTM_data[submod].headers_pos[1] < mod->cache->num_sets); 
 				//assert(mod->RTM_data[submod].headers_pos[2] >= 0 && mod->RTM_data[submod].headers_pos[2] < mod->cache->num_sets); 
-				//assert(mod->RTM_data[submod].headers_pos[3] >= 0 && mod->RTM_data[submod].headers_pos[3] < mod->cache->num_sets); 
-							
+				//assert(mod->RTM_data[submod].headers_pos[3] >= 0 && mod->RTM_data[submod].headers_pos[3] < mod->cache->num_sets);
+				// 
+								
 			}
 					
 			//[DEBUG]
@@ -2349,7 +2396,8 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				*/
 				
 		}
-
+		
+                
 		/* Access latency */
 		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM, stack, 0); /* TODO: Zero? */
@@ -2620,6 +2668,7 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 					EV_MOD_NMOESI_FIND_AND_LOCK_FINISH, stack, stack->prefetch);
 				new_stack->set = stack->set;
 				new_stack->way = stack->way;
+				new_stack->access_type = stack->access_type; 
 				esim_schedule_event(EV_MOD_NMOESI_EVICT, new_stack, 0);
 				return;
 			}
@@ -2910,6 +2959,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		new_stack->way = stack->way;
 		assert(stack->client_info);
 		assert(new_stack->client_info);
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_INVALIDATE, new_stack, 0);
 		return;
 	}
@@ -3014,6 +3064,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		new_stack->write = 1;
 		new_stack->retry = 0;
 		new_stack->request_dir = mod_request_up_down;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
 		return;
 	}
@@ -3330,6 +3381,7 @@ void mod_handler_nmoesi_invalidate_slot(int event, void *data)
 		new_stack->pref_slot = stack->pref_slot;
 		new_stack->access_kind = mod_access_invalidate_slot;
 		new_stack->request_dir = mod_request_up_down;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_PREF_FIND_AND_LOCK, new_stack, 0);
 		return;
 	}
@@ -3519,6 +3571,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		new_stack->access_kind = mod_access_read_request;
 		new_stack->event_queue_item = stack->event_queue_item;
 		new_stack->src_atd_hit = stack->src_atd_hit; /* An ATD hit in a given level should not be an ATD hit in a deeper level */
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
 		return;
 	}
@@ -3671,6 +3724,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				}
 				new_stack->target_mod = owner;
 				new_stack->request_dir = mod_request_down_up;
+				new_stack->access_type = stack->access_type; 
 				esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
 			}
 
@@ -3682,6 +3736,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 					ESIM_EV_NONE, stack, 0);
 				new_stack->target_mod = low_mod;
+				new_stack->access_type = stack->access_type; 
 				esim_schedule_event(EV_MOD_ATD_DELAYED_SET, new_stack, low_mod->latency);
 			}
 
@@ -3702,6 +3757,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 			new_stack->request_dir = mod_request_up_down;
 			new_stack->event_queue_item = stack->event_queue_item;
 			new_stack->src_atd_hit = stack->src_atd_hit > 0 || stack->atd_hit > 0; /* ATD hit in this level or the previous one */
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
 		}
 
@@ -4043,6 +4099,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				EV_MOD_NMOESI_READ_REQUEST_DOWNUP_WAIT_FOR_REQS, stack, stack->prefetch);
 			new_stack->target_mod = owner;
 			new_stack->request_dir = mod_request_down_up;
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
 		}
 
@@ -4070,6 +4127,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				EV_MOD_NMOESI_READ_REQUEST_DOWNUP_FINISH, stack, stack->prefetch);
 			new_stack->peer = mod_stack_set_peer(stack->peer, stack->state);
 			new_stack->target_mod = stack->target_mod;
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_NMOESI_PEER_SEND, new_stack, 0);
 		}
 		else
@@ -4467,6 +4525,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		new_stack->access_kind = mod_access_write_request;
 		new_stack->event_queue_item = stack->event_queue_item;
 		new_stack->src_atd_hit = stack->src_atd_hit; /* An ATD hit in a given level should not be an ATD hit in a deeper level */
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
 		return;
 	}
@@ -4569,6 +4628,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		new_stack->set = stack->set;
 		new_stack->way = stack->way;
 		new_stack->peer = mod_stack_set_peer(stack->peer, stack->state);
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_INVALIDATE, new_stack, 0);
 		return;
 	}
@@ -4616,6 +4676,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 			new_stack->request_dir = mod_request_up_down;
 			new_stack->event_queue_item = stack->event_queue_item;
 			new_stack->src_atd_hit = stack->src_atd_hit > 0 || stack->atd_hit > 0; /* ATD hit in this level or the previous one */
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
 		}
 		else
@@ -4793,6 +4854,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 				ESIM_EV_NONE, stack, 0);
 			new_stack->target_mod = low_mod;
+			new_stack->access_type = stack->access_type; 
 			esim_schedule_event(EV_MOD_ATD_DELAYED_SET, new_stack, low_mod->latency);
 		}
 
@@ -4885,6 +4947,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 					EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP_FINISH, stack, stack->prefetch);
 				new_stack->peer = mod_stack_set_peer(stack->peer, stack->state);
 				new_stack->target_mod = stack->target_mod;
+				new_stack->access_type = stack->access_type;
 
 				esim_schedule_event(EV_MOD_NMOESI_PEER_SEND, new_stack, 0);
 				return;
@@ -5124,7 +5187,7 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 					EV_MOD_NMOESI_INVALIDATE_FINISH, stack, stack->prefetch);
 				new_stack->target_mod = sharer;
 				new_stack->request_dir = mod_request_down_up;
-
+				new_stack->access_type = stack->access_type; 
 				esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
 				stack->pending++;
 			}
@@ -5211,6 +5274,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 		new_stack->message = stack->message;
 		new_stack->blocking = 0;
 		new_stack->retry = 0;
+		new_stack->access_type = stack->access_type; 
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
 		return;
 	}

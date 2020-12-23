@@ -42,6 +42,7 @@ struct mem_system_t
 	struct hash_table_t *dram_systems;
 };
 
+
 struct dram_system_t
 {
 	char *name;

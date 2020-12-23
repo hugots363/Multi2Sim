@@ -32,7 +32,7 @@
 #include "trace-cache.h"
 
 //Hugo declaring extern vasr
-extern int rob_mem_cont; 
+extern unsigned long long int rob_mem_cont; 
 
 /* Return the reason why a thread cannot be dispatched. If it can,
  * return x86_dispatch_stall_used. */

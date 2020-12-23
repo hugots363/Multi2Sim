@@ -45,6 +45,12 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 	stack->ret_event = ret_event;
 	stack->ret_stack = ret_stack;
 
+	//Hugo initalizating own vars
+	if (ret_stack && ret_stack->access_type)
+        {
+        	 stack->access_type = ret_stack->access_type;
+        }
+
 	if (ret_stack && ret_stack->client_info)
 	{
 		stack->client_info = ret_stack->client_info;

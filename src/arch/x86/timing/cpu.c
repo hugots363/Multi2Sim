@@ -37,6 +37,7 @@
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
+#include <mem-system/mem-system.h>
 #include <mem-system/module.h>
 #include <mem-system/prefetch-history.h>
 
@@ -256,7 +257,9 @@ struct x86_cpu_t *x86_cpu;
 //Hugo global var
 long long WU;
 extern double  stall_rob_aux;
-extern int ciclos_tot;
+extern unsigned long long int ciclos_tot;
+extern unsigned long long int cycles_after_reset;
+extern struct mem_system_t *mem_system; 
 
 /* Trace */
 int x86_trace_category;
@@ -1183,6 +1186,7 @@ int x86_cpu_run(void)
 		printf("Esim-time is = %lld\n",esim_time);
 		reset_shift_stats();
 		x86_cpu_reset_stats();
+		cycles_after_reset = arch_x86->last_reset_cycle;
 		WU = 0;
 	}
 	/* Stop if maximum number of CPU instructions exceeded */
@@ -1273,6 +1277,8 @@ void x86_cpu_reset_stats(void)
 	int i;
 	int core;
 	int thread;
+	//Hugo
+	struct mod_t *mod;
 
 	/* TODO: Integrate with other archs */
 	/* TODO: Reset network stats when all archs are reseted */
@@ -1299,8 +1305,18 @@ void x86_cpu_reset_stats(void)
 	x86_cpu->num_branch_uinst = 0;
 	x86_cpu->num_mispred_branch_uinst = 0;
 
-	//Hugo adding reset for rob counter
-	 stall_rob_aux = 0;	
+	//Hugo adding reset for rob counter and others
+	stall_rob_aux = 0;
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                mod->hits_p = 0;
+                mod->hits_data = 0;
+                mod->hits_instructions = 0;
+                mod->misses_p = 0;
+                mod->misses_data = 0;
+                mod->misses_instructions = 0;                                                                   
+        }	
 	/* Reset x86 ctxs stats */
 	x86_ctx_all_reset_stats();
 

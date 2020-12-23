@@ -60,8 +60,10 @@ struct str_map_t mod_access_kind_map =
 };
 //Global vars Hugo
 extern struct mod_t *mod_RTM;
-extern int  rob_mem_cont; 
-
+extern unsigned long long int  rob_mem_cont; 
+extern unsigned long long int hit_0;
+extern unsigned long long int hit_1;
+extern unsigned long long int hit_2;
 
 
 /* Event used for updating the state of adaptative prefetch policy */
@@ -85,19 +87,20 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers, int sub
 	struct RTM_data_t *RTM_data = xcalloc(submodulos,sizeof(struct RTM_data_t));
 	int headsxsub = headers/submodulos;
 	int setsxsub = num_sets/submodulos;
+
 	
 	for(int i = 0; i<submodulos ;i++){
 		RTM_data[i].last_read_set = 0;
 		RTM_data[i].total_shifts = 0;
 		RTM_data[i].headers_pos = xcalloc( headers,sizeof(int));
-		RTM_data[i].penalizations = xcalloc(assoc, sizeof(int*));
-		RTM_data[i].pen_hit = xcalloc(assoc, sizeof(int*));
-		RTM_data[i].pen_miss = xcalloc(assoc, sizeof(int*));	
+		RTM_data[i].penalizations = xcalloc(assoc, sizeof(unsigned long long int*));
+		RTM_data[i].pen_hit = xcalloc(assoc, sizeof(unsigned long long int*));
+		RTM_data[i].pen_miss = xcalloc(assoc, sizeof(unsigned long long int*));	
 
 		for(int j = 0; j < assoc; j++){
-			RTM_data[i].penalizations[j] = xcalloc((num_sets), sizeof(int)); // /submodules¿?
-			RTM_data[i].pen_hit[j] = xcalloc((num_sets), sizeof(int));
-			RTM_data[i].pen_miss[j] = xcalloc((num_sets), sizeof(int));
+			RTM_data[i].penalizations[j] = xcalloc((num_sets), sizeof(unsigned long long int)); // /submodules¿?
+			RTM_data[i].pen_hit[j] = xcalloc((num_sets), sizeof(unsigned long long int));
+			RTM_data[i].pen_miss[j] = xcalloc((num_sets), sizeof(unsigned long long int));
 		}                                                                                                                                     
 		for(int j = 0; j < headsxsub ;j++){
 				//if(j == 0){RTM_data[i].headers_pos[j] = 0;}
@@ -113,7 +116,8 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers, int sub
                         	RTM_data[i].pen_miss[j][k] = 0;
                 	}
         	}		
-	}				
+	}
+						
 	
 	/*
 	struct RTM_data_t *RTM_data = xcalloc(1,sizeof(struct RTM_data_t));
@@ -155,24 +159,28 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers, int sub
 }
 void reset_shift_stats()
 {
-	if(mod){
+	if(mod_RTM){
 		for (int i = 0; i < mod_RTM->submodulos; i++){
 		
 			mod_RTM->RTM_data[i].total_shifts = 0;
 			
 		}
 		for (int i = 0; i < mod_RTM->cache->assoc; i++){
-			for (int j = 0; j < mod_RTM->cache->assoc; j++){
-                		for (int k = 0; k < mod_RTM->cache->num_sets/mod_RTM->headers; k++){
-                        		mod_RTM->RTM_data[i].penalizations[j][k] = 0;
-                        		mod_RTM->RTM_data[i].pen_hit[j][k]= 0;
-                        		mod_RTM->RTM_data[i].pen_miss[j][k] = 0;
+			for (int j = 0; j < mod_RTM->cache->num_sets/mod_RTM->headers; j++){
+                		for (int k = 0; k < mod_RTM->submodulos; k++){
+                        		mod_RTM->RTM_data[k].penalizations[i][j] = 0;
+                        		mod_RTM->RTM_data[k].pen_hit[i][j]= 0;
+                        		mod_RTM->RTM_data[k].pen_miss[i][j] = 0;
                 		}	
         		}
 	 		rob_mem_cont = 0;
 		}
+		
 	}	
-	//TODO Reset tots els stats de mod 	
+	//TODO Reset tots els stats de mod
+	hit_0 = 0;
+	hit_1= 0;
+	hit_2 = 0; 	
 }
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
@@ -220,6 +228,15 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	mod->hits_p = 0;
 	mod->misses_p = 0;
 	mod->accesses_p = 0;
+	mod->hits_data=0;
+	mod->hits_instructions=0;
+	mod->misses_data = 0;
+	mod->misses_instructions = 0;
+	mod->accesses_invalid = 0;
+	mod->accesses_up_down = 0;
+	mod->accesses_down_up = 0;
+	
+	
 
 
 	return mod;
@@ -438,7 +455,7 @@ int mod_find_block_in_stream(struct mod_t *mod, unsigned int addr, int stream)
 /* Return {set, way, tag, state} for an address.
  * The function returns TRUE on hit, FALSE on miss. */
 int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr,
-	int *way_ptr, int *tag_ptr, int *state_ptr)
+	int *way_ptr, int *tag_ptr, int *state_ptr,int *stack_access_type,int *blk_access_type)
 {
 	struct cache_t *cache = mod->cache;
 	struct cache_block_t *blk,*mru_blk;
@@ -488,9 +505,12 @@ int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr,
 				break;
 		}
 	}
+	
+	if(*stack_access_type == 1 || *stack_access_type == 2 ){blk->access_type = *stack_access_type;}
 
 	PTR_ASSIGN(set_ptr, set);
 	PTR_ASSIGN(tag_ptr, tag);
+	PTR_ASSIGN(blk_access_type, blk->access_type);
 
 	/* Miss */
 	if (way == cache->assoc){
@@ -587,7 +607,7 @@ void mod_set_prefetched_bit(struct mod_t *mod, unsigned int addr, int val)
 	int set, way;
 
 	assert(mod->kind == mod_kind_cache && mod->cache != NULL);
-	if (mod->cache->prefetcher && mod_find_block(mod, addr, &set, &way, NULL, NULL))
+	if (mod->cache->prefetcher && mod_find_block(mod, addr, &set, &way, NULL, NULL,NULL,NULL))
 	{
 		mod->cache->sets[set].blocks[way].prefetched = val;
 	}
@@ -599,7 +619,7 @@ int mod_get_prefetched_bit(struct mod_t *mod, unsigned int addr)
 	int set, way;
 
 	assert(mod->kind == mod_kind_cache && mod->cache != NULL);
-	if (mod->cache->prefetcher && mod_find_block(mod, addr, &set, &way, NULL, NULL))
+	if (mod->cache->prefetcher && mod_find_block(mod, addr, &set, &way, NULL, NULL,NULL,NULL))
 	{
 		return mod->cache->sets[set].blocks[way].prefetched;
 	}

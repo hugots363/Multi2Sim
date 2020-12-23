@@ -48,7 +48,9 @@
  * Global Variables
  */
 
-
+extern unsigned long long int  hit_0;
+extern unsigned long long int hit_1;
+extern unsigned long long int hit_2;
 
 int mem_debug_category;
 int mem_trace_category;
@@ -56,8 +58,9 @@ int mem_peer_transfers;
 
 int EV_MAIN_MEMORY_TIC;
 
-int rob_mem_cont = 0;
-int ciclos_tot = 0;
+unsigned long long int rob_mem_cont = 0;
+unsigned long long int ciclos_tot = 0;
+
 /* Frequency domain, as returned by function 'esim_new_domain'. */
 int mem_frequency = 3000;
 int mem_domain_index;
@@ -68,6 +71,7 @@ char *mem_report_file_name = "";
 char *main_mem_report_file_name = "";
 char *own_report_file_name = "";
 double stall_rob_aux;
+unsigned long long int cycles_after_reset;
 
 /*
  * Memory System Object
@@ -438,11 +442,8 @@ void mem_system_dump_report(void)
 	FILE *fh;
 
 	int i;
-	int sum_pen = 0;
-	long long int aux1 = 0;
-	int accesses_n = 0;
-        int misses_n = 0;
-        int hits_n = 0;
+	unsigned long long int sum_pen = 0;
+	unsigned long long int aux1 = 0;
 	//double stall_rob_aux = 0; 
 
 	/* Open file */
@@ -605,20 +606,61 @@ void mem_system_dump_report(void)
         {
                 mod = list_get(mem_system->mod_list, i);
                 cache = mod->cache;
-                fprintf(fh, "Hits-%s,",mod->name);
+		fprintf(fh, "Hits-%s,",mod->name);
 	}
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
         {
                 mod = list_get(mem_system->mod_list, i);
                 cache = mod->cache;
-                fprintf(fh, "Misses-%s,",mod->name);
+                //fprintf(fh, "Hits-data-%s,",mod->name);
+		fprintf(fh, "Hits-data-%s,",mod->name);
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+		//fprintf(fh, "Hits-instructions-%s,",mod->name);
+                fprintf(fh, "Hits-instructions-%s,",mod->name);
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                //fprintf(fh, "Misses-%s,",mod->name);
+		fprintf(fh, "Misses-%s,",mod->name);
 	}
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
         {
                 mod = list_get(mem_system->mod_list, i);
                 cache = mod->cache;
-		
+                //fprintf(fh, "Misses-%s,",mod->name);
+                fprintf(fh, "Misses-data-%s,",mod->name);
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                //fprintf(fh, "Misses-%s,",mod->name);
+                fprintf(fh, "Misses-instructions-%s,",mod->name);
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+		//fprintf(fh, "Accesses-%s,",mod->name);
                 fprintf(fh, "Accesses-%s,",mod->name);                                                                                                                                                                                           }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)                                                                                                                                                                               {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;                                                                                                                                                                                                                  fprintf(fh, "Invalids-%s,",mod->name);
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)                                                                                                                                                                               {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;                                                                                                                                                                                                                  fprintf(fh, "Up-down-%s,",mod->name);
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)                                                                                                                                                                               {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;                                                                                                                                                                                                                  fprintf(fh, "Down-up-%s,",mod->name);
+        }
 	//Mis hit-ratios
 	//fpintf
 	
@@ -657,11 +699,15 @@ void mem_system_dump_report(void)
                 }
                
                 fprintf(fh, "%s","Cantidad de desplazamientos totales,");
+		
         }
 	//fprintf(fh,"Ciclos penalizacion ROB,");
 	fprintf(fh, "Ciclos pen ROB propios,");
 	//fprintf(fh, ",%.3f", dispatch_stall_int[i]);	
-	fprintf(fh,"Ciclos de ejecucion\n");
+	fprintf(fh,"Ciclos de ejecucion,");
+	fprintf(fh, "Hits-RTM-0,");
+	fprintf(fh, "Hits-RTM-1,");
+	fprintf(fh, "Hits-RTM-2\n");
 	
 	//DATA
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
@@ -676,21 +722,64 @@ void mem_system_dump_report(void)
         {
                 mod = list_get(mem_system->mod_list, i);
                 cache = mod->cache;
-                fprintf(fh, "%lld,", mod->hits);
+                fprintf(fh, "%llu,",mod->hits_p);
+
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)                                                                                                                                                                               {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "%llu,", mod->hits_data);
+
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)                                                                                                                                                                               {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "%llu,",mod->hits_instructions);
 
         }
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
         {
                 mod = list_get(mem_system->mod_list, i);
                 cache = mod->cache;
-                fprintf(fh, "%lld,", mod->misses);                                                                                                                                                                                       
+                fprintf(fh, "%llu,",mod->misses_p);                                                                                                                                                                                       
         }
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
         {
                 mod = list_get(mem_system->mod_list, i);
                 cache = mod->cache;
-                fprintf(fh, "%lld,", mod->accesses);                                                                                                                                                                                       
+                fprintf(fh, "%llu,",mod->misses_data);                                                                                                                                                             
         }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "%llu,", mod->misses_instructions);                                                                                                                                                             
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "%llu,",mod->accesses_p);                                                                                                                                                                                       
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "%llu,",mod->accesses_invalid);                                                                                                                                                                                
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "%llu,",mod->accesses_up_down);                                                                                                                                                                                
+        }
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+        {
+                mod = list_get(mem_system->mod_list, i);
+                cache = mod->cache;
+                fprintf(fh, "%llu,",mod->accesses_down_up);                                                                                                                                                                                
+        }
+	
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
         {       mod = list_get(mem_system->mod_list, i);
                 if(mod->RTM)
@@ -706,32 +795,36 @@ void mem_system_dump_report(void)
 				for(int k = 0; k < mod->submodulos;k++){
 					sum_pen += mod->RTM_data[k].penalizations[i][j];
                                 	//fprintf(fh, "%lld,", (long long int) mod->RTM_data->penalizations[i][j]);
-                                	accesses_n += mod->RTM_data[k].penalizations[i][j];
-					misses_n += mod->RTM_data[k].pen_miss[i][j];
-					hits_n += mod->RTM_data[k].pen_hit[i][j];
+                                	//accesses_n += mod->RTM_data[k].penalizations[i][j];
+					//misses_n += mod->RTM_data[k].pen_miss[i][j];
+					//hits_n += mod->RTM_data[k].pen_hit[i][j];
 				
 				}
-				fprintf(fh, "%lld,", (long long int) sum_pen);
+				fprintf(fh, "%llu,",  sum_pen);
 				sum_pen = 0;
                         }
-                }
-		//Printing misses
+                
+		}
+		sum_pen = 0;
+		//Printing hits
 		for(int i = 0; i< mod->cache->assoc ;i++){
                         for(int j = 0; j < mod->cache->num_sets/mod->headers;j++){
                                 for(int k = 0; k < mod->submodulos;k++){
                                         sum_pen += mod->RTM_data[k].pen_hit[i][j];
                                  
-                                }                                                                                                                                                                                                                                      fprintf(fh, "%lld,", (long long int) sum_pen);
-                                sum_pen = 0;
+                                }
+				fprintf(fh, "%llu,",  sum_pen);
+				sum_pen = 0;
                         }
                 }
-		//Printing hits
+		sum_pen = 0;
+		//Printing misses
 		for(int i = 0; i< mod->cache->assoc ;i++){
                         for(int j = 0; j < mod->cache->num_sets/mod->headers;j++){
                                 for(int k = 0; k < mod->submodulos;k++){
                                         sum_pen += mod->RTM_data[k].pen_miss[i][j];
                 
-                                }                                                                                                                                                                                                                                      fprintf(fh, "%lld,", (long long int) sum_pen);
+                                }                                                                                                                                                                                                                                      fprintf(fh, "%llu,",  sum_pen);
                                 sum_pen = 0;
                         }
                 }
@@ -739,13 +832,16 @@ void mem_system_dump_report(void)
               	for(int i = 0; i < mod->submodulos;i++){ 
                 	aux1 += mod->RTM_data[i].total_shifts;
 		}
-		fprintf(fh, "%lld,", aux1);
+		fprintf(fh, "%llu,", aux1);
         }
 
 	
 	//fprintf(fh, "%.3f,", stall_rob_aux);
-	 fprintf(fh,"%d,",rob_mem_cont );
-	fprintf(fh,"%d\n", ciclos_tot);
+	fprintf(fh,"%llu,",rob_mem_cont );
+	fprintf(fh,"%llu,", ciclos_tot - cycles_after_reset);
+	fprintf(fh,"%llu,",hit_0 );
+	fprintf(fh,"%llu,",hit_1 );
+	fprintf(fh,"%llu\n",hit_2 );
 	//printf("Dades Hugo-> Acc:%d,hit:%d,miss:%d\n",accesses_n,hits_n,misses_n); 
 	
 	/* Done */
