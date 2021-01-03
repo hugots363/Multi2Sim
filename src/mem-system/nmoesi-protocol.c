@@ -180,7 +180,68 @@ int ent_to_direct(int dir_ent,int ncab ,int num_sets)
 }
 
 //
+//Calcul desp_menor
+int calc_desp_menor(int set_direct, struct mod_t *mod)
+{
+	int nheaders = mod->headers;
+	int desp_bsup = 99999;
+	int desp_binf = 99999;
+	int desp_menor = 99999;
+	int desp = 0;
 
+	int headsxsub = nheaders/mod->submodulos;
+	int setsxsub = mod->cache->num_sets/mod->submodulos;
+	int set_f = 0;
+	//if(set_direct == 0){submod = 0;}
+	int submod = (set_direct/(setsxsub));
+	//printf("submod 0= %d", submod);
+	//Translate to mapping 0
+	int set_mapped_0 = set_direct % (setsxsub);
+	int set_ent = 0;					
+	if(mod->entrelazado)
+	  {
+	    //fprintf(stderr,"ent:%d->",hit_set)
+	    //set_ent = ent_to_direct(set_mapped_0,headsxsub,setsxsub);i
+	    set_ent = ent_to_direct(set_mapped_0,headsxsub,setsxsub);
+	    //fprintf(stderr,"direct:%d\t",set_direct);
+	  }
+	if(mod->entrelazado){set_f = set_ent;}
+	else{set_f = set_mapped_0;}
+	
+	desp_menor = 9999;	
+	//Desbordamiento: 0->No hay 1->Desbordamiento superior 2->Desbordamiento inferior	
+					
+	for(int w = 0; w< headsxsub;w++ )
+	  {
+	    
+	    //Distancia linea
+	    desp_bsup = (setsxsub - mod->RTM_data[submod].headers_pos[w] + set_f )%setsxsub;
+	    desp_binf = (mod->RTM_data[submod].headers_pos[w] + setsxsub - set_f)%setsxsub;
+	    if(desp_bsup <= desp_binf){desp = desp_bsup;} 
+	    else{desp = -desp_binf;}
+	    // ¿Desbordamiento?:superior , inferior o nada
+	    if(abs(desp_menor) > abs(desp))
+	      {
+		//header = w;
+		desp_menor = desp;
+		//printf(" header(%d) ",desp_menor);
+	      }	
+	    
+	  }
+	return desp_menor;	
+ 				
+}
+void move_headers(int desp_menor, struct mod_t *mod, int set_direct ){
+	//Actualizar posicion cabezales
+	int headsxsub = mod->headers/mod->submodulos;
+	int setsxsub = mod->cache->num_sets/mod->submodulos;
+	int submod = (set_direct/(setsxsub));
+	for(int w = 0; w < headsxsub;w++)
+	{                        	
+		mod->RTM_data[submod].headers_pos[w] = ( (mod->RTM_data[submod].headers_pos[w]+desp_menor)%setsxsub);
+        }
+}
+      
 int should_count_stats(struct mod_stack_t *stack)
 {
 	struct mod_t *mod = stack->target_mod ? stack->target_mod : stack->mod;
@@ -1876,22 +1937,15 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	struct x86_ctx_t *ctx = stack->client_info->ctx;
 	/*RTM Hugo*/
 	int set_direct = 0;
-	int hit_set = 0;
 	int desp = 0;
 	int submod = 0;
 	int desp_menor = 999999;
+	int hit_set = 0;
 	//int header_lec = 0;
 	//int sets_per_h = 0;
-	int desp_bsup = 99999;
-	int desp_binf = 99999;
 	int nheaders = mod->headers;
 	int header = 0;
-	int set_mapped_0 = 0;
-	int headsxsub = 0;
-	int setsxsub = 0;
-	int set_ent = 0;
 	//int submod = 0;
-	static int contador = 0;
 	
 
 
@@ -2184,6 +2238,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		}
 
 		//Hugo stats
+		/*
 		if(stack->hit){
 			if(aux_access_type == ACCESS_DATA){
 				mod->hits_data++;
@@ -2207,7 +2262,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		if(stack->request_dir == mod_request_down_up){mod->accesses_down_up++;}
 		else if(stack->request_dir == mod_request_up_down){mod->accesses_up_down++;}
 		else if(stack->request_dir == mod_request_invalid){mod->accesses_invalid++;}
-				
+		*/		
                 if(  mod->RTM  )
 		{	 
 			 //fprintf(stderr,"Directo, enlazado\n");
@@ -2287,52 +2342,13 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			}
 			else if(mod->RTM_type ==3)
 			{	
-					contador++;
-					headsxsub = nheaders/mod->submodulos;
-					setsxsub = mod->cache->num_sets/mod->submodulos;
-					hit_set = stack->set;
-					int set_f = 0;
-				
-                                	set_direct = hit_set;
-					//if(set_direct == 0){submod = 0;}
-					submod = (set_direct/(setsxsub));
-					//printf("submod 0= %d", submod);
-					//Translate to mapping 0
-					set_mapped_0 = set_direct % (setsxsub);					
-					if(mod->entrelazado)
-                                	{
-						//fprintf(stderr,"ent:%d->",hit_set)
-                                        	//set_ent = ent_to_direct(set_mapped_0,headsxsub,setsxsub);i
-                                        	set_ent = ent_to_direct(set_mapped_0,headsxsub,setsxsub);
-						//fprintf(stderr,"direct:%d\t",set_direct);
-                                	}
-					if(mod->entrelazado){set_f = set_ent;}
-					else{set_f = set_mapped_0;}
-					
-					desp_menor = 9999;	
-					//Desbordamiento: 0->No hay 1->Desbordamiento superior 2->Desbordamiento inferior	
-					
-					for(int w = 0; w< headsxsub;w++ )
-					{
-					
-                                        //Distancia linea
-						desp_bsup = (setsxsub - mod->RTM_data[submod].headers_pos[w] + set_f )%setsxsub;
-						desp_binf = (mod->RTM_data[submod].headers_pos[w] + setsxsub - set_f)%setsxsub;
-						if(desp_bsup <= desp_binf){desp = desp_bsup;} 
-						else{desp = -desp_binf;}
-						// ¿Desbordamiento?:superior , inferior o nada
-						if(abs(desp_menor) > abs(desp))
-						{
-							header = w;
-							desp_menor = desp;
-							//printf(" header(%d) ",desp_menor);
-						}	
-				
-					}
-					
+				desp_menor = calc_desp_menor(stack->set, mod);
+        			//Submod es igual a stac->set/ heads per submodul
+				submod = (stack->set/(mod->cache->num_sets/mod->submodulos)); 		
 				//Aux = desplazamiento 				
 				 //assert(aux <= sets_per_h);
 				 //if(aux_hit != stack->hit){printf("CAMBIA\n");}
+				 /*
 				 mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]++;
 				 if(stack->hit){ 
 					mod->RTM_data[submod].pen_hit[stack->way][abs(desp_menor)]++;
@@ -2342,19 +2358,10 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				}
 				 else{mod->RTM_data[submod].pen_miss[stack->way][abs(desp_menor)]++;}
 				 mod->RTM_data[submod].total_shifts += abs(desp_menor);
-
+				*/
 				//printf("Set_direct = %d, set_ent = %d, mapped_0 = %d, submod = %d, contador= %d, desp_menor= %d, via= %d, valor=%d \n",set_direct,set_ent,set_mapped_0,submod,contador,desp_menor,stack->way,mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]);
 				
 
-				//Actualizar posicion cabezales				
-				for(int w = 0; w < headsxsub;w++)
-                                {
-                                	mod->RTM_data[submod].headers_pos[w] = ( (mod->RTM_data[submod].headers_pos[w]+desp_menor)%setsxsub);
-                                }
-				desp = desp_menor;      
-                                                
-                                                
-                                                
                                    	
 				
 				//assert(mod->RTM_data[submod].headers_pos[0] >= 0 && mod->RTM_data[submod].headers_pos[0] < mod->cache->num_sets);
@@ -2764,6 +2771,40 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 					ctx->report_stack->atd_unknown_per_level_int[mod->level]++;
 				}
 			}
+			
+		//Hugo stats 
+			
+		if(stack->hit){
+			mod->hits_p++;
+			mod->accesses_p++;
+		}
+		else{
+			mod->misses_p++;
+			mod->accesses_p++;
+		}
+		if(stack->request_dir == mod_request_down_up){mod->accesses_down_up++;}
+		else if(stack->request_dir == mod_request_up_down){mod->accesses_up_down++;}
+		else if(stack->request_dir == mod_request_invalid){mod->accesses_invalid++;}
+		
+		if(mod->RTM){
+				desp_menor = calc_desp_menor(stack->set, mod);
+                                int setsxsub = mod->cache->num_sets/mod->submodulos;
+                                submod = (stack->set/(setsxsub));
+				//Actualizar posicion cabezales
+				move_headers(desp_menor,mod, stack->set);
+				
+				 mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]++;
+				 if(stack->hit){ 
+					mod->RTM_data[submod].pen_hit[stack->way][abs(desp_menor)]++;
+					if(abs(desp_menor) == 0){hit_0++;}
+					else if(abs(desp_menor) == 1){hit_1++;}
+					else if(abs(desp_menor) == 2){hit_2++;} 
+				}
+				 else{mod->RTM_data[submod].pen_miss[stack->way][abs(desp_menor)]++;}
+				 mod->RTM_data[submod].total_shifts += abs(desp_menor);
+
+		}
+			
 
 			/* Cache hits, misses, retries... */
 			if (stack->hit)
