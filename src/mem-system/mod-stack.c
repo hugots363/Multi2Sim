@@ -50,6 +50,11 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
         {
         	 stack->access_type = ret_stack->access_type;
         }
+	if(ret_stack && ret_stack->timestamp != -1 )
+	{
+		stack->timestamp = ret_stack->timestamp;
+	}
+	else{stack->timestamp = -1;}
 
 	if (ret_stack && ret_stack->client_info)
 	{

@@ -58,7 +58,7 @@
 /*
  * Global variables
  */
-
+extern unsigned long long int my_cycles;
 
 /* Help message */
 
@@ -1229,6 +1229,7 @@ int x86_cpu_run(void)
 
 	/* One more cycle of x86 timing simulation */
 	arch_x86->cycle++;
+	my_cycles = arch_x86->cycle;
 
 	/* Empty uop trace list. This dumps the last trace line for instructions
 	 * that were freed in the previous simulation cycle. */

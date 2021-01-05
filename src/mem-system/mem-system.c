@@ -51,6 +51,8 @@
 extern unsigned long long int  hit_0;
 extern unsigned long long int hit_1;
 extern unsigned long long int hit_2;
+extern unsigned long long int acum_cycles;
+extern unsigned long long int acum_cycles_times;
 
 int mem_debug_category;
 int mem_trace_category;
@@ -708,6 +710,8 @@ void mem_system_dump_report(void)
 	fprintf(fh, "Hits-RTM-0,");
 	fprintf(fh, "Hits-RTM-1,");
 	fprintf(fh, "Hits-RTM-2\n");
+	fprintf(fh, "Cycles-L1D+L2\n");
+	fprintf(fh, "Apariciones-L1+L2\n");
 	
 	//DATA
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
@@ -842,6 +846,8 @@ void mem_system_dump_report(void)
 	fprintf(fh,"%llu,",hit_0 );
 	fprintf(fh,"%llu,",hit_1 );
 	fprintf(fh,"%llu\n",hit_2 );
+	fprintf(fh,"%llu\n",acum_cycles);
+	fprintf(fh,"%llu\n",acum_cycles_times );	
 	//printf("Dades Hugo-> Acc:%d,hit:%d,miss:%d\n",accesses_n,hits_n,misses_n); 
 	
 	/* Done */

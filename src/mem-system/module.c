@@ -64,7 +64,8 @@ extern unsigned long long int  rob_mem_cont;
 extern unsigned long long int hit_0;
 extern unsigned long long int hit_1;
 extern unsigned long long int hit_2;
-
+extern unsigned long long int acum_cycles;
+extern unsigned long long int acum_cycles_times;
 
 /* Event used for updating the state of adaptative prefetch policy */
 int EV_MOD_ADAPT_PREF;
@@ -180,7 +181,9 @@ void reset_shift_stats()
 	//TODO Reset tots els stats de mod
 	hit_0 = 0;
 	hit_1= 0;
-	hit_2 = 0; 	
+	hit_2 = 0;
+	acum_cycles = 0;
+	acum_cycles_times = 0; 	
 }
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
