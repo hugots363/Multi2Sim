@@ -709,8 +709,8 @@ void mem_system_dump_report(void)
 	fprintf(fh,"Ciclos de ejecucion,");
 	fprintf(fh, "Hits-RTM-0,");
 	fprintf(fh, "Hits-RTM-1,");
-	fprintf(fh, "Hits-RTM-2\n");
-	fprintf(fh, "Cycles-L1D+L2\n");
+	fprintf(fh, "Hits-RTM-2,");
+	fprintf(fh, "Cycles-L1D+L2,");
 	fprintf(fh, "Apariciones-L1+L2\n");
 	
 	//DATA
@@ -845,8 +845,8 @@ void mem_system_dump_report(void)
 	fprintf(fh,"%llu,", ciclos_tot - cycles_after_reset);
 	fprintf(fh,"%llu,",hit_0 );
 	fprintf(fh,"%llu,",hit_1 );
-	fprintf(fh,"%llu\n",hit_2 );
-	fprintf(fh,"%llu\n",acum_cycles);
+	fprintf(fh,"%llu,",hit_2 );
+	fprintf(fh,"%llu,",acum_cycles);
 	fprintf(fh,"%llu\n",acum_cycles_times );	
 	//printf("Dades Hugo-> Acc:%d,hit:%d,miss:%d\n",accesses_n,hits_n,misses_n); 
 	
