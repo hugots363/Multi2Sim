@@ -1316,7 +1316,8 @@ void x86_cpu_reset_stats(void)
                 mod->hits_instructions = 0;
                 mod->misses_p = 0;
                 mod->misses_data = 0;
-                mod->misses_instructions = 0;                                                                   
+                mod->misses_instructions = 0;
+		mod->accesses_p = 0;                                                                  
         }	
 	/* Reset x86 ctxs stats */
 	x86_ctx_all_reset_stats();
