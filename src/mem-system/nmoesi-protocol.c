@@ -2296,8 +2296,11 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			
 
 			/* Calculating header penalty, */
-				
-				//fprintf(stderr,"%lld\t%s\t%x\t%d\t%d\t%d\t",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+				int tipo_acc = 2;
+				if(stack->read){tipo_acc = 0;}
+                                else {tipo_acc = 1;}	
+				fprintf(stderr,"%lld\t%s\t%x\t%d\t%d\t%d\t",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
+				fprintf(stderr,"Num_lock_ports= %d 0-lec,1-esc= %d  \n",mod->num_locked_ports,tipo_acc);
 			/*	
 				FILE *fd = fopen("prueba.txt","a");		
                         	for(int i = 0; i < mod->headers/mod->submodulos;i++ ){
@@ -2367,27 +2370,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			else if(mod->RTM_type ==3)
 			{	
 				desp_menor = calc_desp_menor(stack->set, mod);
-        			//Submod es igual a stac->set/ heads per submodul
 				submod = (stack->set/(mod->cache->num_sets/mod->submodulos)); 		
-				//Aux = desplazamiento 				
-				 //assert(aux <= sets_per_h);
-				 //if(aux_hit != stack->hit){printf("CAMBIA\n");}
-				 /*
-				 mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]++;
-				 if(stack->hit){ 
-					mod->RTM_data[submod].pen_hit[stack->way][abs(desp_menor)]++;
-					if(abs(desp_menor) == 0){hit_0++;}
-					else if(abs(desp_menor) == 1){hit_1++;}
-					else if(abs(desp_menor) == 2){hit_2++;} 
-				}
-				 else{mod->RTM_data[submod].pen_miss[stack->way][abs(desp_menor)]++;}
-				 mod->RTM_data[submod].total_shifts += abs(desp_menor);
-				*/
-				//printf("Set_direct = %d, set_ent = %d, mapped_0 = %d, submod = %d, contador= %d, desp_menor= %d, via= %d, valor=%d \n",set_direct,set_ent,set_mapped_0,submod,contador,desp_menor,stack->way,mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]);
-				
-
-                                   	
-				
 				//assert(mod->RTM_data[submod].headers_pos[0] >= 0 && mod->RTM_data[submod].headers_pos[0] < mod->cache->num_sets);
 				//assert(mod->RTM_data[submod].headers_pos[1] >= 0 && mod->RTM_data[submod].headers_pos[1] < mod->cache->num_sets); 
 				//assert(mod->RTM_data[submod].headers_pos[2] >= 0 && mod->RTM_data[submod].headers_pos[2] < mod->cache->num_sets); 
@@ -2432,6 +2415,8 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		/* Access latency */
 		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM, stack, 0); /* TODO: Zero? */
+		else if( mod->RTM && stack->write)
+			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp) +  mod->custom_read_latency);
 		else
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp)+ mod->dir_latency); /* Access latency */
 
@@ -2568,7 +2553,8 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 		}
 
 		/* Access latency */
-		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency);
+		if( mod->RTM && stack->write){esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->custom_read_latency);}
+		else {esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency);}
 		return;
 	}	
 
@@ -2857,8 +2843,12 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 					struct x86_uop_t *uop = stack->event_queue_item;
 					if (uop)
 						uop->uinst->interthread_miss = 1; /* Mark this memory instruction as an interthread miss */
-					if (X86_THREAD.ctx)
+					if (X86_THREAD.ctx){
+						//Hugo
+						//if( mod->RTM && stack->write){X86_THREAD.ctx->interthread_cache_penalty_cycles += mod->latency + mod->custom_read_latency;}
+						//else {X86_THREAD.ctx->interthread_cache_penalty_cycles += mod->latency + mod->dir_latency;}
 						X86_THREAD.ctx->interthread_cache_penalty_cycles += mod->latency + mod->dir_latency;
+					}
 				}
 			}
 			else

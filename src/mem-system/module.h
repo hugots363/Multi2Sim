@@ -450,6 +450,8 @@ struct mod_t
 	int submodulos;	
 	struct RTM_data_t *RTM_data;
 	enum RTM_type_t RTM_type;
+	int custom_read_latency;
+	int custom_write_latency;
 	
 	
 };

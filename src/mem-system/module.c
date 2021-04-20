@@ -238,6 +238,8 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	mod->accesses_invalid = 0;
 	mod->accesses_up_down = 0;
 	mod->accesses_down_up = 0;
+	mod->custom_read_latency = 0;
+        mod->custom_write_latency = 0;
 	
 	
 

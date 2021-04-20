@@ -1246,7 +1246,10 @@ static void mem_config_read_modules(struct config_t *config)
 		mod->entrelazado = config_read_int(config, section, "entrelazado", 0); 
 		mod->WU = config_read_int(config, section, "WU", 0);
 		mod->WU_f = 0;
-		mod->submodulos = config_read_int(config, section, "submodulos", 1); 
+		mod->submodulos = config_read_int(config, section, "submodulos", 1);
+		mod->custom_read_latency =  config_read_int(config, section, "L1D_DWM_read_latency", mod->dir_latency);
+		mod->custom_write_latency =  config_read_int(config, section, "L1D_DWM_write_latency", mod->dir_latency);
+		 
 
 		if (mod->RTM)
                 {
