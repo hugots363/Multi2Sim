@@ -357,7 +357,7 @@ void mem_system_command_handler(int event, void *data)
 				__FUNCTION__, mod->name, tag, command_line);
 
 		/* Check that tag goes to specified set */
-		mod_find_block(mod, tag, &set_check, NULL, &tag_check, NULL);
+		mod_find_block(mod, tag, &set_check, NULL, &tag_check, NULL,NULL,NULL);
 		if (set != set_check)
 			fatal("%s: %s: tag 0x%x belongs to set %d.\n\t> %s",
 				__FUNCTION__, mod->name, tag, set_check, command_line);

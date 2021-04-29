@@ -2295,12 +2295,13 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                           //      }
 			
 
-			/* Calculating header penalty, */
+			/* Calculating header penalty, 
 				int tipo_acc = 2;
 				if(stack->read){tipo_acc = 0;}
                                 else {tipo_acc = 1;}	
 				fprintf(stderr,"%lld\t%s\t%x\t%d\t%d\t%d\t",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
 				fprintf(stderr,"Num_lock_ports= %d 0-lec,1-esc= %d  \n",mod->num_locked_ports,tipo_acc);
+			*/
 			/*	
 				FILE *fd = fopen("prueba.txt","a");		
                         	for(int i = 0; i < mod->headers/mod->submodulos;i++ ){
@@ -2370,6 +2371,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			else if(mod->RTM_type ==3)
 			{	
 				desp_menor = calc_desp_menor(stack->set, mod);
+				printf("PREVIO->desp_menor = %d, abs(desp_menor) = %d\n",desp_menor,abs(desp_menor));
 				submod = (stack->set/(mod->cache->num_sets/mod->submodulos)); 		
 				//assert(mod->RTM_data[submod].headers_pos[0] >= 0 && mod->RTM_data[submod].headers_pos[0] < mod->cache->num_sets);
 				//assert(mod->RTM_data[submod].headers_pos[1] >= 0 && mod->RTM_data[submod].headers_pos[1] < mod->cache->num_sets); 
@@ -2415,11 +2417,13 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		/* Access latency */
 		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM, stack, 0); /* TODO: Zero? */
-		else if( mod->RTM && stack->write)
-			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp) +  mod->custom_read_latency);
-		else
-			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp)+ mod->dir_latency); /* Access latency */
-
+		else if( mod->RTM ){
+			if(stack->write){esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp_menor) +  mod->dir_latency); }
+			else{esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp_menor) +  mod->dir_latency); }
+		}
+		else{
+			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency);
+		}
 
 		/* End of my code*/
 		return;
