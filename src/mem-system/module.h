@@ -34,12 +34,15 @@ extern int max_mod_level;
 
 struct RTM_data_t
 {
-	unsigned int last_read_set;
 	unsigned int *headers_pos;
 	unsigned long long int **penalizations;
 	unsigned long long int **pen_hit;
 	unsigned long long int **pen_miss; 
 	unsigned long long int total_shifts;
+	//TapeCache structures
+	int **TC_headpos;
+	unsigned int *speedyWay;
+	int *MRU;
 }; 
 
 extern enum RTM_type_t
@@ -452,6 +455,7 @@ struct mod_t
 	enum RTM_type_t RTM_type;
 	int custom_read_latency;
 	int custom_write_latency;
+	int TapeCache;
 	
 	
 };

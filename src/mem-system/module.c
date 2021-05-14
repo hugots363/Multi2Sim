@@ -91,17 +91,28 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers, int sub
 
 	
 	for(int i = 0; i<submodulos ;i++){
-		RTM_data[i].last_read_set = 0;
 		RTM_data[i].total_shifts = 0;
 		RTM_data[i].headers_pos = xcalloc( headers,sizeof(int));
 		RTM_data[i].penalizations = xcalloc(assoc, sizeof(unsigned long long int*));
 		RTM_data[i].pen_hit = xcalloc(assoc, sizeof(unsigned long long int*));
 		RTM_data[i].pen_miss = xcalloc(assoc, sizeof(unsigned long long int*));	
+		RTM_data[i].TC_headpos = xcalloc(assoc, sizeof( int*));
+		RTM_data[i].speedyWay = xcalloc(num_sets, sizeof(int));
+		RTM_data[i].MRU = xcalloc(assoc, sizeof( int*));
+
+
+		
+		for(int j = 0; j < num_sets ;j++){
+			 RTM_data[i].speedyWay[j] = 0;	
+		}
+		
 
 		for(int j = 0; j < assoc; j++){
 			RTM_data[i].penalizations[j] = xcalloc((num_sets), sizeof(unsigned long long int)); // /submodules¿?
 			RTM_data[i].pen_hit[j] = xcalloc((num_sets), sizeof(unsigned long long int));
 			RTM_data[i].pen_miss[j] = xcalloc((num_sets), sizeof(unsigned long long int));
+			RTM_data[i].TC_headpos[j] = xcalloc((headers), sizeof( int));
+			
 		}                                                                                                                                     
 		for(int j = 0; j < headsxsub ;j++){
 				//if(j == 0){RTM_data[i].headers_pos[j] = 0;}
@@ -111,13 +122,25 @@ struct RTM_data_t *RTM_data_create(int num_sets, int assoc, int headers, int sub
 						
         	}
 		for (int j = 0; j < assoc; j++){
-                	for (int k = 0; k < num_sets/headers; k++){
+                	for (int k = 0; k < num_sets; k++){
                         	RTM_data[i].penalizations[j][k] = 0;
                         	RTM_data[i].pen_hit[j][k]= 0;
                         	RTM_data[i].pen_miss[j][k] = 0;
                 	}
         	}		
 	}
+	for (int i = 0; i < assoc; i++){
+		for(int j = 0; j < submodulos ;j++){
+			RTM_data[j].MRU[i] = 0;
+			for (int k = 0; k < headsxsub; k++){
+                                //i -> submodule, j-> way, k-> header
+                                RTM_data[j].TC_headpos[i][k] = (setsxsub/headsxsub)*k;
+                                                                                        }
+		}
+	}
+	
+		
+			
 						
 	
 	/*
@@ -176,8 +199,11 @@ void reset_shift_stats()
         		}
 	 		rob_mem_cont = 0;
 		}
+		for (int i = 0; i < mod_RTM->cache->num_sets;i++){
+			mod_RTM->RTM_data[0].speedyWay[i] = 0;
+		}
 		
-	}	
+	}
 	//TODO Reset tots els stats de mod
 	hit_0 = 0;
 	hit_1= 0;

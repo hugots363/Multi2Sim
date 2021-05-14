@@ -664,12 +664,11 @@ void mem_system_dump_report(void)
                 cache = mod->cache;                                                                                                                                                                                                                  fprintf(fh, "Down-up-%s,",mod->name);
         }
 	//Mis hit-ratios
-	//fpintf
 	
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
         {
                 mod = list_get(mem_system->mod_list, i);
-		if(mod->RTM)
+		if(mod->RTM ||mod->TapeCache)
 		{
 			break;
 		}
@@ -707,9 +706,17 @@ void mem_system_dump_report(void)
 	fprintf(fh, "Ciclos pen ROB propios,");
 	//fprintf(fh, ",%.3f", dispatch_stall_int[i]);	
 	fprintf(fh,"Ciclos de ejecucion,");
-	fprintf(fh, "Hits-RTM-0,");
-	fprintf(fh, "Hits-RTM-1,");
-	fprintf(fh, "Hits-RTM-2,");
+	if(mod->TapeCache == 0){	
+		fprintf(fh, "Hits-RTM-0,");
+        	fprintf(fh, "Hits-RTM-1,");
+        	fprintf(fh, "Hits-RTM-2,");
+	}
+	if(mod->TapeCache){
+		for( int i = 0; i < mod->cache->num_sets/mod->submodulos   ; i++ ){
+			fprintf(fh, "Ciclos-pen-TC-%d,",i);
+		}
+		
+	}
 	fprintf(fh, "Cycles-L1D+L2,");
 	fprintf(fh, "Apariciones-L1+L2\n");
 	
@@ -786,13 +793,13 @@ void mem_system_dump_report(void)
 	
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
         {       mod = list_get(mem_system->mod_list, i);
-                if(mod->RTM)
+                if(mod->RTM ||mod->TapeCache)
                 {
                         break;
                 }	
 	}
 
-	if(mod->RTM)
+	if(mod->RTM )
         {
                 for(int i = 0; i< mod->cache->assoc ;i++){
                         for(int j = 0; j < mod->cache->num_sets/mod->headers;j++){
@@ -843,9 +850,26 @@ void mem_system_dump_report(void)
 	//fprintf(fh, "%.3f,", stall_rob_aux);
 	fprintf(fh,"%llu,",rob_mem_cont );
 	fprintf(fh,"%llu,", ciclos_tot - cycles_after_reset);
-	fprintf(fh,"%llu,",hit_0 );
-	fprintf(fh,"%llu,",hit_1 );
-	fprintf(fh,"%llu,",hit_2 );
+	if(mod->RTM){
+		fprintf(fh,"%llu,",hit_0 );
+        	fprintf(fh,"%llu,",hit_1 );
+        	fprintf(fh,"%llu,",hit_2 );
+	}
+	
+	sum_pen = 0;
+	if(mod->TapeCache){
+		//2 es el cost del swap
+		for(int i = 0; i< (mod->cache->num_sets/mod->submodulos) ;i++){
+                        for(int j = 0; j < mod->cache->assoc;j++){
+                                for(int k = 0; k < mod->submodulos;k++){
+                                        sum_pen += mod->RTM_data[k].penalizations[j][i];
+                        	}
+			}
+			fprintf(fh, "%llu,",  sum_pen);
+                        sum_pen = 0;
+		}
+	}
+	
 	fprintf(fh,"%llu,",acum_cycles);
 	fprintf(fh,"%llu\n",acum_cycles_times );	
 	//printf("Dades Hugo-> Acc:%d,hit:%d,miss:%d\n",accesses_n,hits_n,misses_n); 

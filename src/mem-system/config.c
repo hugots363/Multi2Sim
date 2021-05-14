@@ -1249,9 +1249,10 @@ static void mem_config_read_modules(struct config_t *config)
 		mod->submodulos = config_read_int(config, section, "submodulos", 1);
 		mod->custom_read_latency =  config_read_int(config, section, "L1D_DWM_read_latency", mod->dir_latency);
 		mod->custom_write_latency =  config_read_int(config, section, "L1D_DWM_write_latency", mod->dir_latency);
+		mod->TapeCache = config_read_int(config, section, "TapeCache", 0);
 		 
 
-		if (mod->RTM)
+		if (mod->RTM || mod->TapeCache)
                 {
                         mod->RTM_data = RTM_data_create(mod->cache->num_sets, mod->cache->assoc, mod->headers,mod->submodulos);
 			mod_RTM = mod;

@@ -183,7 +183,78 @@ int ent_to_direct(int dir_ent,int ncab ,int num_sets)
 	return ((dir_ent % ncab)*(num_sets/ncab) + (dir_ent/ncab)%(num_sets/ncab) );
 }
 
-//
+
+//Calcul desp menor Tapecache
+int calc_desp_menor_TC(int set_direct,int submodulo,  struct mod_t *mod, int way, bool write){
+
+        int nheaders = mod->headers;
+        int desp_menor = 99999;
+        
+        //Inmediately previous and next headers to the position to read or write
+        int prev_header = 0;
+        int next_header = 0;
+
+        int headsxsub = nheaders/mod->submodulos;
+        int setsxsub = mod->cache->num_sets/mod->submodulos;
+        int set_f = set_direct % (setsxsub);
+        //If the accessed way is the fast one, no penalization
+        if(mod->RTM_data[0].speedyWay[set_direct] == way ){
+                return 0;
+        }
+        //Or the accessed way is dense, need to calculate penalization
+        else{
+                //You must write with the only MTJ capable of it, in our implementation the first (0)
+                if(write){
+			//Sentido positivo
+                        //if((set_f - mod->RTM_data[submodulo].TC_headpos[way][0]) <= (mod->RTM_data[submodulo].TC_headpos[way][0] - set_f ) ){
+			desp_menor = set_f - mod->RTM_data[submodulo].TC_headpos[way][1];
+			//}
+			//Sentido negativo
+                        //else{
+			//	desp_menor = -(mod->RTM_data[submodulo].TC_headpos[way][0] - set_f );
+			//}
+			//Incrementar MRU counter y ver si hacemos  swap??
+                }
+                //Read has lesser penalization, you can read with every header 
+                else{
+                        //Searching prev and next headers of the set to read
+                         for(int i = 0; i< headsxsub;i++ ){
+                                if(mod->RTM_data[submodulo].TC_headpos[way][i] >= set_f){
+                                        if(i > 0){prev_header = i -1;}
+                                        else{prev_header = -1;}
+                                        next_header = i;
+                                        break;
+                                        
+                                }
+                        }
+                        if(prev_header != -1 &&  (set_f - mod->RTM_data[submodulo].TC_headpos[way][prev_header]) <= (mod->RTM_data[submodulo].TC_headpos[way][next_header] - set_f ) ){
+				desp_menor = set_f - mod->RTM_data[submodulo].TC_headpos[way][prev_header];  
+			}
+                        else{desp_menor = -((mod->RTM_data[submodulo].TC_headpos[way][next_header] - set_f ));}
+                }
+                
+        }
+	return desp_menor;
+}
+
+void MRU_update(int set_direct,int way, struct mod_t *mod){
+	//Update MRU
+       	mod->RTM_data[0].MRU[way] = set_direct;
+}
+
+bool swap_needed(int set_direct,int way ,struct mod_t *mod){
+        //Ceck if a swap is needed
+        if( set_direct  == mod->RTM_data[0].MRU[way] ){
+                return true; 
+        }
+        else{
+        	return false;
+        }
+}
+
+
+
+
 //Calcul desp_menor
 int calc_desp_menor(int set_direct, struct mod_t *mod)
 {
@@ -245,6 +316,17 @@ void move_headers(int desp_menor, struct mod_t *mod, int set_direct ){
 		mod->RTM_data[submod].headers_pos[w] = ( (mod->RTM_data[submod].headers_pos[w]+desp_menor)%setsxsub);
         }
 }
+
+void move_headers_TC(int desp_menor, struct mod_t *mod, int set_direct, int way ){
+	int headsxsub = mod->headers/mod->submodulos;
+        int setsxsub = mod->cache->num_sets/mod->submodulos;
+        int submod = (set_direct/(setsxsub));
+	for(int w = 0; w < headsxsub;w++)
+        {
+                mod->RTM_data[submod].TC_headpos[way][w] = mod->RTM_data[submod].TC_headpos[way][w] + desp_menor;
+        }
+}
+
       
 int should_count_stats(struct mod_stack_t *stack)
 {
@@ -2057,6 +2139,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		struct mod_port_t *port = stack->port;
 		struct dir_lock_t *dir_lock;
 		int aux_access_type = -1;
+		int swap_pen = 0;
 		//struct cache_block_t *block_lru;
 		if( !strcmp(mod->name,"dl1-0") ){ stack->access_type = ACCESS_DATA;}
                 else if( !strcmp(mod->name,"il1-0") ){stack->access_type = ACCESS_INSTRUCTION;}	
@@ -2371,7 +2454,6 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			else if(mod->RTM_type ==3)
 			{	
 				desp_menor = calc_desp_menor(stack->set, mod);
-				printf("PREVIO->desp_menor = %d, abs(desp_menor) = %d\n",desp_menor,abs(desp_menor));
 				submod = (stack->set/(mod->cache->num_sets/mod->submodulos)); 		
 				//assert(mod->RTM_data[submod].headers_pos[0] >= 0 && mod->RTM_data[submod].headers_pos[0] < mod->cache->num_sets);
 				//assert(mod->RTM_data[submod].headers_pos[1] >= 0 && mod->RTM_data[submod].headers_pos[1] < mod->cache->num_sets); 
@@ -2380,46 +2462,33 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				// 
 								
 			}
-					
-			//[DEBUG]
-			//
-				
-			
-				/*	
-				
-					if(mod->RTM_type==1)
-                                        	fprintf(stderr,"\t%d\t",desp);
-                                	if(mod->RTM_type==2)
-                                        	fprintf(stderr,"\t%d\t", desp);
-                                	if(mod->RTM_type==3)
-                                        	fprintf(stderr,"\t%d\t  ",desp_menor);
-                                	for(int i = 0; i < mod->headers;i++){
-                                        	fprintf(stderr,"%d\t",mod->RTM_data[0].headers_pos[i]);
-                                	}
-                                	fprintf(stderr,"%d\t",header);
-                                	if(stack->read){fprintf(stderr,"READ\t");}
-                                	else if(stack->write){fprintf(stderr,"WRITE\t");}
-                                	else{fprintf(stderr,"OTHER\t");}
-                                	if(mod->RTM_type == 1)
-                                        	fprintf(stderr,"SL\t");
-                                	if(mod->RTM_type == 2)
-                                        	fprintf(stderr,"SE\t");
-                                	if(mod->RTM_type == 3)
-                                        	fprintf(stderr,"DL\t");
-                               		fprintf(stderr,"\n");
-				
-			
-				*/
-				
 		}
-		
-                
+			if(mod->TapeCache == 1){
+				submod = (stack->set/(mod->cache->num_sets/mod->submodulos));
+				/*
+				int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);
+				printf("Set= %d\t Submod=%d\t Set-f= %d\t R=%u\t W=%u\t" ,stack->set,submod, set_f ,stack->read,stack->write);
+				for(int i = 0; i<mod->headers/mod->submodulos;i++){
+					printf("Header-prev%d=%d\t",i,mod->RTM_data[submod].TC_headpos[stack->way][i]);
+				}
+				printf("SpeedyWay=%d\t desp=%d\n",mod->RTM_data[0].speedyWay[stack->set],calc_desp_menor_TC(stack->set,submod, mod,stack->way,stack->write));
+				*/
+				desp_menor = calc_desp_menor_TC(stack->set,submod, mod,stack->way,stack->write);
+				if(swap_needed(stack->set,stack->way,mod)){
+					swap_pen = 2;
+				}
+				//printf("Swap=%d\t, Desp_menor=%d\n",swap_needed(stack->set,stack->way,mod),desp_menor);
+				
+				
+			}
+			
+					
 		/* Access latency */
 		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM, stack, 0); /* TODO: Zero? */
-		else if( mod->RTM ){
-			if(stack->write){esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp_menor) +  mod->dir_latency); }
-			else{esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp_menor) +  mod->dir_latency); }
+		else if( mod->RTM || mod->TapeCache){
+			if(stack->write){esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp_menor)+swap_pen +  mod->dir_latency); }
+			else{esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp_menor) + swap_pen +  mod->dir_latency); }
 		}
 		else{
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency);
@@ -2823,6 +2892,25 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 				 else{mod->RTM_data[submod].pen_miss[stack->way][abs(desp_menor)]++;}
 				 mod->RTM_data[submod].total_shifts += abs(desp_menor);
 
+		}
+		else if(mod->TapeCache){
+			int setsxsub = mod->cache->num_sets/mod->submodulos;
+			int swap = 0;
+			submod = ((stack->set)/(setsxsub));
+                        desp_menor = calc_desp_menor_TC(stack->set,submod, mod, stack->way, stack->write);
+                        if(swap_needed(stack->set,stack->way,mod)){
+                        	swap = 2;
+					
+				mod->RTM_data[0].speedyWay[stack->set] = stack->way;
+                        }
+			MRU_update(stack->set, stack->way, mod);
+			move_headers_TC(desp_menor, mod, stack->set, stack->way);
+			
+			//Update data statistics	
+			mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)+swap]++;
+                        mod->RTM_data[submod].total_shifts += (abs(desp_menor)+ swap);
+			//printf("Set:%d\t Pen[%d]:%lld\n",stack->set, abs(desp_menor), mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]);
+						
 		}
 			
 
