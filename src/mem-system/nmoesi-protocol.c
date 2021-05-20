@@ -354,20 +354,20 @@ void move_headers_TC(int desp_menor, struct mod_t *mod, int set_direct, int way 
         }
 }
 
-void do_preshift(int way, struct mod_t *mod, int headsxsub,int submodNow,int setxsubmod ){
+void do_preshift(int ways, struct mod_t *mod, int headsxsub,int submodNow,int setxsubmod ){
 	//If doing the preshift would get over the threshold, don't do it
-	//for(int i = 0; i<ways; i++){
+	for(int i = 0; i<ways; i++){
 		//4 is the threshold in the TC paper	
-		if(  (mod->RTM_data[submodNow].TC_headpos[way][headsxsub-1] +1) <= ((setxsubmod -1)+4) )
+		if(  (mod->RTM_data[submodNow].TC_headpos[i][headsxsub-1] +1) <= ((setxsubmod -1)+4) )
         	{
 
                 	for(int w = 0; w < headsxsub;w++)
            		{
-                        	mod->RTM_data[submodNow].TC_headpos[way][w]++;
+                        	mod->RTM_data[submodNow].TC_headpos[i][w]++;
                 	}
         	}
 	
-	//}
+	}
 	
 }
 
@@ -2955,8 +2955,7 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
                         }
 			MRU_update(stack->set, stack->way, mod);
 			move_headers_TC(desp_menor, mod, stack->set, stack->way);
-			do_preshift(stack->way, mod, mod->headers/mod->submodulos, submod ,setsxsub );
-			
+			do_preshift(mod->cache->assoc, mod, mod->headers/mod->submodulos, submod ,setsxsub );	
 			//Update data statistics	
 			mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]++;
                         mod->RTM_data[submod].total_shifts += (abs(desp_menor));
