@@ -197,26 +197,28 @@ int calc_desp_menor_TC(int set_direct,int submodulo,  struct mod_t *mod, int way
         int headsxsub = nheaders/mod->submodulos;
         int setsxsub = mod->cache->num_sets/mod->submodulos;
         int set_f = set_direct % (setsxsub);
+	int desp_prev = 0; 
+	int desp_next = 0;
         //If the accessed way is the fast one, no penalization
         if(mod->RTM_data[0].speedyWay[set_direct] == way ){
                 return 0;
         }
         //Or the accessed way is dense, need to calculate penalization
         else{
-                //You must write with the only MTJ capable of it, in our implementation the first (0)
-                if(write){
+                //You must write with the only MTJ capable of it, in our implementation 1 
+                //if(write){
 			//Sentido positivo
                         //if((set_f - mod->RTM_data[submodulo].TC_headpos[way][0]) <= (mod->RTM_data[submodulo].TC_headpos[way][0] - set_f ) ){
-			desp_menor = set_f - mod->RTM_data[submodulo].TC_headpos[way][1];
+		//	desp_menor = set_f - mod->RTM_data[submodulo].TC_headpos[way][1];
 			//}
 			//Sentido negativo
                         //else{
 			//	desp_menor = -(mod->RTM_data[submodulo].TC_headpos[way][0] - set_f );
 			//}
 			//Incrementar MRU counter y ver si hacemos  swap??
-                }
+                //}
                 //Read has lesser penalization, you can read with every header 
-                else{
+                //else{
                         //Searching prev and next headers of the set to read
                          for(int i = 0; i< headsxsub;i++ ){
                                 if(mod->RTM_data[submodulo].TC_headpos[way][i] >= set_f){
@@ -226,12 +228,37 @@ int calc_desp_menor_TC(int set_direct,int submodulo,  struct mod_t *mod, int way
                                         break;
                                         
                                 }
+				//Useful in case i = headsxsub-1 
+				else{
+					next_header = -1;
+					prev_header = headsxsub -1;
+				}
                         }
-                        if(prev_header != -1 &&  (set_f - mod->RTM_data[submodulo].TC_headpos[way][prev_header]) <= (mod->RTM_data[submodulo].TC_headpos[way][next_header] - set_f ) ){
-				desp_menor = set_f - mod->RTM_data[submodulo].TC_headpos[way][prev_header];  
+			//Getting the shifts
+			desp_prev = set_f - mod->RTM_data[submodulo].TC_headpos[way][prev_header];
+			desp_next = mod->RTM_data[submodulo].TC_headpos[way][next_header] - set_f;
+			//Checking the threshold
+			if( (mod->RTM_data[submodulo].TC_headpos[way][headsxsub -1] + desp_prev)  > (setsxsub -1)+4 ){ prev_header = -1;}
+			if((mod->RTM_data[submodulo].TC_headpos[way][0] -desp_next) < -4){next_header = -1;}
+			//Checking postion	
+			if(next_header == -1){
+				desp_menor = desp_prev;
 			}
-                        else{desp_menor = -((mod->RTM_data[submodulo].TC_headpos[way][next_header] - set_f ));}
-                }
+			else if(prev_header == -1){
+				desp_menor = -desp_next;
+			}
+			//Usual  case
+			else{
+				
+				//Positive movement
+				if(desp_prev <= desp_next){
+					desp_menor = desp_prev;
+				}
+				//Negative movement
+				else{	
+					desp_menor = -desp_next;
+				}
+			}
                 
         }
 	return desp_menor;
@@ -325,6 +352,23 @@ void move_headers_TC(int desp_menor, struct mod_t *mod, int set_direct, int way 
         {
                 mod->RTM_data[submod].TC_headpos[way][w] = mod->RTM_data[submod].TC_headpos[way][w] + desp_menor;
         }
+}
+
+void do_preshift(int way, struct mod_t *mod, int headsxsub,int submodNow,int setxsubmod ){
+	//If doing the preshift would get over the threshold, don't do it
+	//for(int i = 0; i<ways; i++){
+		//4 is the threshold in the TC paper	
+		if(  (mod->RTM_data[submodNow].TC_headpos[way][headsxsub-1] +1) <= ((setxsubmod -1)+4) )
+        	{
+
+                	for(int w = 0; w < headsxsub;w++)
+           		{
+                        	mod->RTM_data[submodNow].TC_headpos[way][w]++;
+                	}
+        	}
+	
+	//}
+	
 }
 
       
@@ -2467,7 +2511,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				submod = (stack->set/(mod->cache->num_sets/mod->submodulos));
 				/*
 				int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);
-				printf("Set= %d\t Submod=%d\t Set-f= %d\t R=%u\t W=%u\t" ,stack->set,submod, set_f ,stack->read,stack->write);
+				printf("Cycle=%lld\t Way=%d\tSet= %d\t Submod=%d\t Set-f= %d\t R=%u\t W=%u\t" ,esim_cycle(),stack->way,stack->set,submod, set_f ,stack->read,stack->write);
 				for(int i = 0; i<mod->headers/mod->submodulos;i++){
 					printf("Header-prev%d=%d\t",i,mod->RTM_data[submod].TC_headpos[stack->way][i]);
 				}
@@ -2895,20 +2939,27 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 		}
 		else if(mod->TapeCache){
 			int setsxsub = mod->cache->num_sets/mod->submodulos;
-			int swap = 0;
 			submod = ((stack->set)/(setsxsub));
-                        desp_menor = calc_desp_menor_TC(stack->set,submod, mod, stack->way, stack->write);
+			desp_menor = calc_desp_menor_TC(stack->set,submod, mod, stack->way, stack->write);	
+			int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);	
+                        printf("Cycle=%lld\t Way=%d\tSet=%d\t Submod=%d\t Set-f=%d\t R=%u\t W=%u\t" ,esim_cycle(),stack->way,stack->set,submod, set_f ,stack->read,stack->write);
+                        for(int i = 0; i<mod->headers/mod->submodulos;i++){
+                        	printf("Header-prev%d=%d\t",i,mod->RTM_data[submod].TC_headpos[stack->way][i]);
+                        }
+                        printf("SpeedyWay=%d\t desp=%d\n",mod->RTM_data[0].speedyWay[stack->set],desp_menor);
+			
+			//submod = ((stack->set)/(setsxsub));
+                        //desp_menor = calc_desp_menor_TC(stack->set,submod, mod, stack->way, stack->write);
                         if(swap_needed(stack->set,stack->way,mod)){
-                        	swap = 2;
-					
 				mod->RTM_data[0].speedyWay[stack->set] = stack->way;
                         }
 			MRU_update(stack->set, stack->way, mod);
 			move_headers_TC(desp_menor, mod, stack->set, stack->way);
+			do_preshift(stack->way, mod, mod->headers/mod->submodulos, submod ,setsxsub );
 			
 			//Update data statistics	
-			mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)+swap]++;
-                        mod->RTM_data[submod].total_shifts += (abs(desp_menor)+ swap);
+			mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]++;
+                        mod->RTM_data[submod].total_shifts += (abs(desp_menor));
 			//printf("Set:%d\t Pen[%d]:%lld\n",stack->set, abs(desp_menor), mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]);
 						
 		}
@@ -5498,7 +5549,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 		struct net_t *net;
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
-
+		
 		mem_debug("  %lld %lld 0x%x %s message reply\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 
