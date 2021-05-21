@@ -2941,12 +2941,16 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 			int setsxsub = mod->cache->num_sets/mod->submodulos;
 			submod = ((stack->set)/(setsxsub));
 			desp_menor = calc_desp_menor_TC(stack->set,submod, mod, stack->way, stack->write);	
-			int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);	
+			int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);
+			
+			//DEBUG	
+			/*
                         printf("Cycle=%lld\t Way=%d\tSet=%d\t Submod=%d\t Set-f=%d\t R=%u\t W=%u\t" ,esim_cycle(),stack->way,stack->set,submod, set_f ,stack->read,stack->write);
                         for(int i = 0; i<mod->headers/mod->submodulos;i++){
                         	printf("Header-prev%d=%d\t",i,mod->RTM_data[submod].TC_headpos[stack->way][i]);
                         }
                         printf("SpeedyWay=%d\t desp=%d\n",mod->RTM_data[0].speedyWay[stack->set],desp_menor);
+			*/
 			
 			//submod = ((stack->set)/(setsxsub));
                         //desp_menor = calc_desp_menor_TC(stack->set,submod, mod, stack->way, stack->write);
