@@ -2941,7 +2941,7 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 			int setsxsub = mod->cache->num_sets/mod->submodulos;
 			submod = ((stack->set)/(setsxsub));
 			desp_menor = calc_desp_menor_TC(stack->set,submod, mod, stack->way, stack->write);	
-			int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);
+			//int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);
 			
 			//DEBUG	
 			/*
