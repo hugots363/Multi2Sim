@@ -798,7 +798,6 @@ void mem_system_dump_report(void)
                         break;
                 }	
 	}
-
 	if(mod->RTM )
         {
                 for(int i = 0; i< mod->cache->assoc ;i++){

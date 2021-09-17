@@ -34,9 +34,9 @@ enum x86_reg_file_kind_t x86_reg_file_kind = x86_reg_file_kind_private;  /* Shar
 int x86_reg_file_int_size = 80;  /* Per-thread integer register file size */
 int x86_reg_file_fp_size = 40;  /* Per-thread floating-point register file size */
 int x86_reg_file_xmm_size = 40;  /* Per-thread xmm register file size */
+int x86_emu_min_inst_per_ctx;
 
-
-
+extern int windowSize;
 
 /* Private variables and functions */
 
@@ -44,6 +44,32 @@ int x86_reg_file_xmm_size = 40;  /* Per-thread xmm register file size */
 static int x86_reg_file_int_local_size;
 static int x86_reg_file_fp_local_size;
 static int x86_reg_file_xmm_local_size;
+//static struct x86_RTM_counters_t x86_RTM_counters_int;
+
+
+/*Move the data from instruction array to the matrix in order to plot it */
+
+//static void x86_move_data_to_matrix(){
+	/*
+	for(int i = 0;i < x86_reg_file_int_size ;i++){
+		if(x86_RTM_counters_int.ref_array[i].refs < 5){
+			x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][x86_RTM_counters_int.ref_array[i].refs]++;	
+		}
+		else{
+			x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][5]++;
+		}
+	}
+
+	//DEBUG printing
+	printf("\n w%u ",x86_RTM_counters_int.current_win);
+	for(int i = 0;i < 5 ;i++){
+		printf(" %llu",x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][i]);
+	}
+	printf("\n");
+
+	x86_RTM_counters_int.current_win++;	
+	
+	} */
 
 
 /* Reclaim an integer physical register, and return its identifier. */
@@ -155,6 +181,7 @@ void x86_reg_file_init(void)
 {
 	int core;
 	int thread;
+
 	
 	/* Register file size restrictions */
 	if (x86_reg_file_int_size < X86_REG_FILE_MIN_INT_SIZE)
@@ -185,8 +212,37 @@ void x86_reg_file_init(void)
 				x86_reg_file_fp_local_size, x86_reg_file_xmm_local_size);
 		x86_reg_file_init_thread(core, thread);
 	}
-}
+	
+	/*Initialize RTM data structures*/
+	/*
+	if(windowSize != 0){
+		static int ref_division = 5;
+		int num_of_windows = x86_emu_min_inst_per_ctx/windowSize;
 
+		x86_RTM_counters_int.ref_window = xcalloc(num_of_windows, sizeof(unsigned long long  int*));
+		x86_RTM_counters_int.ref_array = xcalloc(x86_reg_file_int_size, sizeof(struct x86_instruction_data_t));
+	
+		//Matrix with the x windows and the distribution of dependencies (0,1,2,3,4,5o+)
+		for(int i = 0; i< num_of_windows; i++){
+			x86_RTM_counters_int.ref_window[i] = xcalloc(ref_division, sizeof(unsigned long long  int));
+		}
+		//Filling the matrix with 0s
+		for(int i = 0; i< num_of_windows; i++ ){
+			for(int j = 0; j < ref_division; j++ ){
+				x86_RTM_counters_int.ref_window[i][j] = 0;
+			}
+		}
+
+		//Reference array to track all instructions
+		for(int i = 0; i< x86_reg_file_int_size; i++){
+			x86_RTM_counters_int.ref_array[i].refs = 0;
+		}	
+			x86_RTM_counters_int.commited_inst = 0;
+       			x86_RTM_counters_int.current_win = 0;
+
+		//End of RTM data structures
+	}*/
+}
 
 void x86_reg_file_done(void)
 {
@@ -237,6 +293,7 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 	/* Initialize free list */
 	for (phreg = 0; phreg < xmm_size; phreg++)
 		reg_file->xmm_free_phreg[phreg] = phreg;
+	
 
 	/* Return */
 	return reg_file;
@@ -252,6 +309,8 @@ void x86_reg_file_free(struct x86_reg_file_t *reg_file)
 	free(reg_file->xmm_phreg);
 	free(reg_file->xmm_free_phreg);
 	free(reg_file);
+	
+
 }
 
 
@@ -441,6 +500,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 	int thread = uop->thread;
 	struct x86_reg_file_t *reg_file = X86_THREAD.reg_file;
 
+
 	/* Update floating-point top of stack */
 	if (uop->uinst->opcode == x86_uinst_fp_pop)
 	{
@@ -460,6 +520,10 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		if (X86_DEP_IS_INT_REG(loreg))
 		{
 			phreg = reg_file->int_rat[loreg - x86_dep_int_first];
+			//Counting the reservation of physical regs
+			//x86_RTM_counters_int.ref_array[phreg].refs++;
+			printf("RENAME\n");
+			//End of data harvesting
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_int_reads++;
 		}
@@ -748,7 +812,8 @@ void x86_reg_file_commit(struct x86_uop_t *uop)
 
 		if (X86_DEP_IS_INT_REG(loreg))
 		{
-			/* Decrease counter of previous mapping and free if 0. */
+
+			/* Decrease counter of previous mapping and free if 0. */	
 			assert(reg_file->int_phreg[ophreg].busy > 0);
 			reg_file->int_phreg[ophreg].busy--;
 			if (!reg_file->int_phreg[ophreg].busy)
@@ -760,7 +825,27 @@ void x86_reg_file_commit(struct x86_uop_t *uop)
 				reg_file->int_free_phreg_count++;
 				X86_CORE.reg_file_int_count--;
 				X86_THREAD.reg_file_int_count--;
+
+				//Releasing dependencies and checking if moving data to the matrix is necessary 
+				/*
+			     	x86_RTM_counters_int.ref_array[ophreg].refs--;
+				x86_RTM_counters_int.commited_inst++;
+				//By now hardcoded, I'll change it (50M inst/ 100 windows = 5) 5000000  inst/winSize
+				if(windowSize !=  0 && x86_RTM_counters_int.current_win  < (x86_emu_min_inst_per_ctx/windowSize)   ){
+					//printf("instxwindow = %u\n",x86_emu_min_inst_per_ctx/windowSize);
+					if(x86_RTM_counters_int.commited_inst >= windowSize ){
+						x86_RTM_counters_int.commited_inst = 0;
+						x86_move_data_to_matrix();
+					}
+					else{
+						x86_RTM_counters_int.commited_inst++;
+					}	
+					//End data harvest
+				} 
+				*/
+				printf("COMMIT\n");
 			}
+				
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
 		{

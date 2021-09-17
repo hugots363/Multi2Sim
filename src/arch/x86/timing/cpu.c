@@ -260,6 +260,7 @@ extern double  stall_rob_aux;
 extern unsigned long long int ciclos_tot;
 extern unsigned long long int cycles_after_reset;
 extern struct mem_system_t *mem_system; 
+int windowSize;
 
 /* Trace */
 int x86_trace_category;
@@ -772,7 +773,8 @@ void x86_cpu_read_config(void)
 		x86_cpu_fast_forward_count = config_read_llint(config, section, "FastForward", 0);
 	//Hugo 
 	WU =  config_read_llint(config, section, "WarmUp", 0);
-
+	windowSize = config_read_int(config, section, "WindowSize", 0);
+	//
 	x86_cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
 	x86_cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
 	x86_cpu_thread_switch_penalty = config_read_int(config, section, "ThreadSwitchPenalty", 0);

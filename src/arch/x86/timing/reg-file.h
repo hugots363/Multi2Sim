@@ -36,6 +36,27 @@ extern enum x86_reg_file_kind_t
 extern int x86_reg_file_int_size;
 extern int x86_reg_file_fp_size;
 extern int x86_reg_file_xmm_size;
+//extern struct x86_RTM_counters_t x86_RTM_counters_int;
+
+//Hugo adding a struct to get the data of the DWM in the reg-file
+struct x86_RTM_counters_t
+{
+	unsigned long long int **ref_window;
+	struct x86_instruction_data_t *ref_array;
+	unsigned long long int commited_inst;
+	int current_win;
+	
+
+};
+
+struct x86_instruction_data_t
+{
+	//Ref counter, number of dependencies of the instruction
+	unsigned long long int refs;
+		
+};
+
+//End of modifications
 
 struct x86_phreg_t
 {
