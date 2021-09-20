@@ -601,7 +601,7 @@ void mem_system_dump_report(void)
 
 
 	//Dumping Hugo stats	
-	
+	if(strcmp(own_report_file_name,"")){
 	fh = file_open_for_write(own_report_file_name);
 	//Headers
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
@@ -875,6 +875,7 @@ void mem_system_dump_report(void)
 	
 	/* Done */
 	fclose(fh);
+	}
 	fclose(f);
 }
 
