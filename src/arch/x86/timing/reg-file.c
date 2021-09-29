@@ -44,32 +44,37 @@ extern int windowSize;
 static int x86_reg_file_int_local_size;
 static int x86_reg_file_fp_local_size;
 static int x86_reg_file_xmm_local_size;
-//static struct x86_RTM_counters_t x86_RTM_counters_int;
+static struct x86_RTM_counters_t x86_RTM_counters_int;
 
 
 /*Move the data from instruction array to the matrix in order to plot it */
 
-//static void x86_move_data_to_matrix(){
-	/*
+static void x86_move_data_to_matrix(struct x86_reg_file_t *reg_file){
+
 	for(int i = 0;i < x86_reg_file_int_size ;i++){
-		if(x86_RTM_counters_int.ref_array[i].refs < 5){
-			x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][x86_RTM_counters_int.ref_array[i].refs]++;	
-		}
-		else{
-			x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][5]++;
+		printf("[%d]%lld %d, ",i,x86_RTM_counters_int.ref_array[i].refs,reg_file->int_phreg[i].busy );
+		if(reg_file->int_phreg[i].busy){
+			//printf("%lld ",x86_RTM_counters_int.ref_array[i].refs );
+			if(x86_RTM_counters_int.ref_array[i].refs < 5){
+				x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][x86_RTM_counters_int.ref_array[i].refs]++;	
+			}
+			else{
+				x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][5]++;
+			}	
 		}
 	}
 
 	//DEBUG printing
+			
 	printf("\n w%u ",x86_RTM_counters_int.current_win);
 	for(int i = 0;i < 5 ;i++){
 		printf(" %llu",x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][i]);
 	}
-	printf("\n");
-
+	printf("\n\n");
+	
 	x86_RTM_counters_int.current_win++;	
 	
-	} */
+} 
 
 
 /* Reclaim an integer physical register, and return its identifier. */
@@ -106,6 +111,7 @@ static int x86_reg_file_fp_reclaim(int core, int thread)
 	assert(!reg_file->fp_phreg[phreg].pending);
 	return phreg;
 }
+
 
 
 /* Reclaim an xmm physical register, and return its identifier. */
@@ -214,7 +220,7 @@ void x86_reg_file_init(void)
 	}
 	
 	/*Initialize RTM data structures*/
-	/*
+	
 	if(windowSize != 0){
 		static int ref_division = 5;
 		int num_of_windows = x86_emu_min_inst_per_ctx/windowSize;
@@ -241,7 +247,7 @@ void x86_reg_file_init(void)
        			x86_RTM_counters_int.current_win = 0;
 
 		//End of RTM data structures
-	}*/
+	}
 }
 
 void x86_reg_file_done(void)
@@ -471,8 +477,6 @@ int x86_reg_file_can_rename(struct x86_uop_t *uop)
 	{
 		if (X86_THREAD.reg_file_int_count + uop->ph_int_odep_count > x86_reg_file_int_local_size)
 			return 0;
-		if (X86_THREAD.reg_file_fp_count + uop->ph_fp_odep_count > x86_reg_file_fp_local_size)
-			return 0;
 		if (X86_THREAD.reg_file_xmm_count + uop->ph_xmm_odep_count > x86_reg_file_xmm_local_size)
 			return 0;
 	}
@@ -500,6 +504,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 	int thread = uop->thread;
 	struct x86_reg_file_t *reg_file = X86_THREAD.reg_file;
 
+	int is_int = 0;
 
 	/* Update floating-point top of stack */
 	if (uop->uinst->opcode == x86_uinst_fp_pop)
@@ -512,7 +517,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		/* Push floating-point stack */
 		reg_file->fp_top_of_stack = (reg_file->fp_top_of_stack + 7) % 8;
 	}
-
+	//printf("R->uinst:%s, addr:%x, ph_idep:%d,ph_odep:%d \n",x86_uinst_info[uop->uinst->opcode].name,uop->fetch_address, uop->ph_idep, uop->ph_idep);
 	/* Rename input int/FP/XMM registers */
 	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
 	{
@@ -521,11 +526,17 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		{
 			phreg = reg_file->int_rat[loreg - x86_dep_int_first];
 			//Counting the reservation of physical regs
-			//x86_RTM_counters_int.ref_array[phreg].refs++;
-			printf("RENAME\n");
+			x86_RTM_counters_int.ref_array[phreg].refs++;
+			printf("Incremento\n");
+			//printf("uinst:%s\n",x86_uinst_info[uop->uinst->opcode].name);
 			//End of data harvesting
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_int_reads++;
+			//printf("R->uinst:%s, addr:%x, ph_idep:%d,ph_odep:%d \n",x86_uinst_info[uop->uinst->opcode].name,uop->fetch_address, uop->ph_idep, uop->ph_idep);
+			is_int = 1;
+			
+			
+
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
 		{
@@ -634,6 +645,20 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			reg_file->int_rat[loreg - x86_dep_int_first] = flag_phreg;
 		}
 	}
+	//RTM
+	if(is_int){
+		printf("R->inst:%s, addr:%x, ph_idep:",x86_uinst_info[uop->uinst->opcode].name,uop->fetch_address);
+		for(int i = 0; i < uop->ph_int_idep_count; i++ ){
+			printf(" %d",uop->ph_idep[i]);
+		}
+		printf("  ph_odep: ");
+		for(int i = 0; i < uop->ph_int_odep_count; i++ ){
+			printf(" %d",uop->ph_odep[i]);
+                }
+		printf(" \n");
+		is_int = 0;
+	}
+	
 }
 
 
@@ -660,6 +685,26 @@ int x86_reg_file_ready(struct x86_uop_t *uop)
 		if (X86_DEP_IS_XMM_REG(loreg) && reg_file->xmm_phreg[phreg].pending)
 			return 0;
 	}
+	//Counting the reservation of physical regs
+        //x86_RTM_counters_int.ref_array[phreg].refs++;
+	//printf("Sumando en el registro %u\n",phreg);
+        //printf("uinst:%s\n",x86_uinst_info[uop->uinst->opcode].name);
+	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
+        {
+		x86_RTM_counters_int.ref_array[uop->ph_idep[dep]].refs--;
+	}
+        if(windowSize !=  0 && x86_RTM_counters_int.current_win  < (x86_emu_min_inst_per_ctx/windowSize)   ){
+                //printf("instxwindow = %u\n",x86_emu_min_inst_per_ctx/windowSize);
+        	if(x86_RTM_counters_int.commited_inst >= windowSize ){
+                	x86_RTM_counters_int.commited_inst = 0;
+                        x86_move_data_to_matrix(reg_file);
+                        //printf("uinst:%s\n",x86_uinst_info[uop->uinst->opcode].name);
+                }
+                //End data harvest
+        }
+	x86_RTM_counters_int.commited_inst++;
+        printf("Ready->uinst:%s, addr:%x\n",x86_uinst_info[uop->uinst->opcode].name,uop->fetch_address);	
+        //End of data harvesting
 	return 1;
 }
 
@@ -728,6 +773,11 @@ void x86_reg_file_undo(struct x86_uop_t *uop)
 
 			/* Return to previous mapping */
 			reg_file->int_rat[loreg - x86_dep_int_first] = ophreg;
+			assert(reg_file->int_phreg[ophreg].busy);
+		}
+		else if (X86_DEP_IS_FP_REG(loreg))
+		{
+			/* Convert to top-of-stack relative */
 			assert(reg_file->int_phreg[ophreg].busy);
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
@@ -804,6 +854,9 @@ void x86_reg_file_commit(struct x86_uop_t *uop)
 	struct x86_reg_file_t *reg_file = X86_THREAD.reg_file;
 
 	assert(!uop->specmode);
+	
+	//x86_RTM_counters_int.commited_inst++;
+	//printf("C->uinst:%s, addr:%x\n",x86_uinst_info[uop->uinst->opcode].name,uop->fetch_address);
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
 	{
 		loreg = uop->uinst->odep[dep];
@@ -826,24 +879,20 @@ void x86_reg_file_commit(struct x86_uop_t *uop)
 				X86_CORE.reg_file_int_count--;
 				X86_THREAD.reg_file_int_count--;
 
-				//Releasing dependencies and checking if moving data to the matrix is necessary 
+				//Releasing dependencies and checking if moving data to the matrix is necessary 	
+			     	//if(x86_RTM_counters_int.ref_array[ophreg].refs >= 1){x86_RTM_counters_int.ref_array[ophreg].refs--;}
 				/*
-			     	x86_RTM_counters_int.ref_array[ophreg].refs--;
-				x86_RTM_counters_int.commited_inst++;
-				//By now hardcoded, I'll change it (50M inst/ 100 windows = 5) 5000000  inst/winSize
+				x86_RTM_counters_int.ref_array[ophreg].refs--;
 				if(windowSize !=  0 && x86_RTM_counters_int.current_win  < (x86_emu_min_inst_per_ctx/windowSize)   ){
 					//printf("instxwindow = %u\n",x86_emu_min_inst_per_ctx/windowSize);
 					if(x86_RTM_counters_int.commited_inst >= windowSize ){
 						x86_RTM_counters_int.commited_inst = 0;
-						x86_move_data_to_matrix();
+						x86_move_data_to_matrix(reg_file);
+						//printf("uinst:%s\n",x86_uinst_info[uop->uinst->opcode].name);
 					}
-					else{
-						x86_RTM_counters_int.commited_inst++;
-					}	
 					//End data harvest
 				} 
 				*/
-				printf("COMMIT\n");
 			}
 				
 		}
@@ -952,11 +1001,6 @@ void x86_reg_file_check_integrity(int core, int thread)
 			{
 				assert(reg_file->int_phreg[phreg].busy);
 				assert(reg_file->int_phreg[ophreg].busy);
-			}
-			else if (X86_DEP_IS_FP_REG(loreg))
-			{
-				assert(reg_file->fp_phreg[phreg].busy);
-				assert(reg_file->fp_phreg[ophreg].busy);
 			}
 			else if (X86_DEP_IS_XMM_REG(loreg))
 			{
