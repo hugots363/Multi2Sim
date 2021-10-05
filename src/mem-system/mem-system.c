@@ -603,6 +603,10 @@ void mem_system_dump_report(void)
 	//Dumping Hugo stats	
 	if(strcmp(own_report_file_name,"")){
 	fh = file_open_for_write(own_report_file_name);
+	if (!fh){
+		printf("Fallo en la creación del report own report!\n");
+		return;
+	}
 	//Headers
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
         {
