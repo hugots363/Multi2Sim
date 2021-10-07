@@ -30,6 +30,14 @@ void x86_cpu_recover(int core, int thread)
 	x86_iq_recover(core, thread);
 	x86_lsq_recover(core, thread);
 	x86_event_queue_recover(core, thread);
+	
+	//Removing references when misspeculation,RTM
+	/*
+	printf("RECOVERING!\n");
+	for(int i = 0; i< x86_reg_file_int_size; i++){
+        	x86_RTM_counters_int.ref_array[i].refs = 0;
+        }
+	*/
 
 	/* Remove instructions from ROB, restoring the state of the
 	 * physical register file. */

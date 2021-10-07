@@ -46,6 +46,7 @@ struct x86_RTM_counters_t
 	unsigned long long int commited_inst;
 	int current_win;
 	
+	
 
 };
 
