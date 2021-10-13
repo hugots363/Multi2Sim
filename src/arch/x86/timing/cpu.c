@@ -688,7 +688,6 @@ static void x86_cpu_dump_report(void)
 
 	/* Close */
 	fclose(f);
-	printf("PASO POR DUMP!") ;
 
 	rf = file_open_for_write(reg_report_file_name);
         if (!rf){
