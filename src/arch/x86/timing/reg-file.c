@@ -225,6 +225,7 @@ void x86_reg_file_init(void)
 
 		x86_RTM_counters_int.ref_window = xcalloc(num_of_windows, sizeof(unsigned long long  int*));
 		x86_RTM_counters_int.ref_array = xcalloc(x86_reg_file_int_size, sizeof(struct x86_instruction_data_t));
+		x86_RTM_counters_int.cycle_level_deps = xcalloc(x86_reg_file_int_size, sizeof(unsigned long long int));
 	
 		//Matrix with the x windows and the distribution of dependencies (0,1,2,3,4,5o+)
 		for(int i = 0; i< num_of_windows; i++){

@@ -48,6 +48,7 @@ struct x86_RTM_counters_t
 	unsigned long long int **ref_window;
 	struct x86_instruction_data_t *ref_array;
 	unsigned long long int commited_inst;
+	unsigned long long int *cycle_level_deps;
 	int current_win;
 	
 	
