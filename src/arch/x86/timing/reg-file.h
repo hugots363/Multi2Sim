@@ -36,7 +36,11 @@ extern enum x86_reg_file_kind_t
 extern int x86_reg_file_int_size;
 extern int x86_reg_file_fp_size;
 extern int x86_reg_file_xmm_size;
-//extern struct x86_RTM_counters_t x86_RTM_counters_int;
+extern struct x86_RTM_counters_t x86_RTM_counters_int;
+extern char *own_report_file_name;
+extern int ref_division;
+extern int num_of_windows; 
+
 
 //Hugo adding a struct to get the data of the DWM in the reg-file
 struct x86_RTM_counters_t

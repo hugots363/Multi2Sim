@@ -44,6 +44,7 @@ extern char *x86_config_help;
 
 extern char *x86_config_file_name;
 extern char *x86_cpu_report_file_name;
+extern char *reg_report_file_name;
 
 extern int x86_cpu_num_cores;
 extern int x86_cpu_num_threads;

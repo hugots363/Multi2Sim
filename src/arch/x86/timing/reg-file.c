@@ -36,7 +36,8 @@ int x86_reg_file_fp_size = 40;  /* Per-thread floating-point register file size 
 int x86_reg_file_xmm_size = 40;  /* Per-thread xmm register file size */
 int x86_emu_min_inst_per_ctx;
 
-extern int windowSize;
+int windowSize;
+int ref_division;
 
 /* Private variables and functions */
 
@@ -44,7 +45,7 @@ extern int windowSize;
 static int x86_reg_file_int_local_size;
 static int x86_reg_file_fp_local_size;
 static int x86_reg_file_xmm_local_size;
-static struct x86_RTM_counters_t x86_RTM_counters_int;
+struct x86_RTM_counters_t x86_RTM_counters_int;
 
 
 /*Move the data from instruction array to the matrix in order to plot it */
@@ -218,7 +219,7 @@ void x86_reg_file_init(void)
 	/*Initialize RTM data structures*/
 	
 	if(windowSize != 0){
-		static int ref_division = 5;
+		ref_division = 5;
 		int num_of_windows = x86_emu_min_inst_per_ctx/windowSize;
 
 
@@ -305,7 +306,6 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 
 void x86_reg_file_free(struct x86_reg_file_t *reg_file)
 {
-	//printf("\nrename[%lld],ready[%lld],undo[%lld],commit[%lld]\n", x86_RTM_counters_int.rename, x86_RTM_counters_int.ready, x86_RTM_counters_int.undo, x86_RTM_counters_int.commit);
 	free(reg_file->int_phreg);
 	free(reg_file->int_free_phreg);
 	free(reg_file->fp_phreg);
@@ -396,6 +396,8 @@ void x86_reg_file_dump(int core, int thread, FILE *f)
 	fprintf(f, "xmm_free_phreg_count  %d  # Number of free integer registers\n",
 		X86_THREAD.reg_file->xmm_free_phreg_count);
 	fprintf(f, "\n");
+
+	printf("DUMPEo rerg file\n");
 
 }
 

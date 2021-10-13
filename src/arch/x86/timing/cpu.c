@@ -269,6 +269,7 @@ int x86_trace_category;
 
 char *x86_config_file_name = "";
 char *x86_cpu_report_file_name = "";
+char *reg_report_file_name = "";
 
 int x86_cpu_num_cores = 1;
 int x86_cpu_num_threads = 1;
@@ -489,6 +490,7 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 static void x86_cpu_dump_report(void)
 {
 	FILE *f;
+	FILE *rf;
 	int core, thread;
 
 	long long now;
@@ -686,6 +688,24 @@ static void x86_cpu_dump_report(void)
 
 	/* Close */
 	fclose(f);
+	printf("PASO POR DUMP!") ;
+
+	rf = file_open_for_write(reg_report_file_name);
+        if (!rf){
+                return;
+	}
+	int num_of_windows = x86_emu_min_inst_per_ctx/windowSize;
+	fprintf(rf,"0ref,1ref,2ref,3ref,4ref,5ref\n");
+	for(int i = 0; i< num_of_windows; i++ ){
+                        for(int j = 0; j <= ref_division; j++ ){
+				if(j == 0){ fprintf(rf,"%llu",x86_RTM_counters_int.ref_window[i][j]); }
+				else{fprintf(rf,",%llu",x86_RTM_counters_int.ref_window[i][j]);}
+                        }
+			fprintf(rf,"\n");
+                }
+	
+	
+
 }
 
 
