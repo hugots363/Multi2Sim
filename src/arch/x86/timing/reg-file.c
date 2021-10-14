@@ -73,12 +73,29 @@ static void x86_move_data_to_matrix(struct x86_reg_file_t *reg_file){
 	
 } 
 
+void RTM_data_acum(void){
+
+	//ddefine X86_CORE  (x86_cpu->core[core])
+	//define X86_THREAD  (x86_cpu->core[core].thread[thread])
+	int refs = 0;
+
+	//RTM data harvest every cycle
+        //unsigned long long deps = 0;
+        for (int i = 0; i < x86_reg_file_int_size; i++){
+                //Bucle que recorre deps
+		if(x86_RTM_counters_int.ref_array[i].refs > 0){refs++;}
+                //x86_RTM_counters_int.cycle_level_deps[0]++;
+        }
+	x86_RTM_counters_int.cycle_level_deps[refs]++;
+}
 
 /* Reclaim an integer physical register, and return its identifier. */
 static int x86_reg_file_int_reclaim(int core, int thread)
 {
 	int phreg;
 	struct x86_reg_file_t *reg_file = X86_THREAD.reg_file;
+
+	printf("Core: %d,thread:%d\n",core,thread);
 
 	/* Obtain a register from the free list */
 	assert(reg_file->int_free_phreg_count > 0);
@@ -312,6 +329,10 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 
 void x86_reg_file_free(struct x86_reg_file_t *reg_file)
 {
+	for (int i = 0; i < x86_reg_file_int_size; i++){
+		printf("r%d:%llu ",i,x86_RTM_counters_int.cycle_level_deps[i]);
+        }
+	printf("\n");
 	free(reg_file->int_phreg);
 	free(reg_file->int_free_phreg);
 	free(reg_file->fp_phreg);
@@ -403,7 +424,6 @@ void x86_reg_file_dump(int core, int thread, FILE *f)
 		X86_THREAD.reg_file->xmm_free_phreg_count);
 	fprintf(f, "\n");
 
-	printf("DUMPEo rerg file\n");
 
 }
 

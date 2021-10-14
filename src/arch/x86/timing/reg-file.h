@@ -111,6 +111,8 @@ void x86_reg_file_undo(struct x86_uop_t *uop);
 void x86_reg_file_commit(struct x86_uop_t *uop);
 void x86_reg_file_check_integrity(int core, int thread);
 
+void RTM_data_acum(void);
+
 
 #endif
 
