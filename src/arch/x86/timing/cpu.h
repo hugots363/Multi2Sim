@@ -22,7 +22,6 @@
 
 #include <arch/x86/emu/uinst.h>
 
-
 /* Forward types */
 struct x86_uop_t;
 

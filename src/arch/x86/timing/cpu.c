@@ -1250,6 +1250,14 @@ int x86_cpu_run(void)
 
 	/* One more cycle of x86 timing simulation */
 	arch_x86->cycle++;
+	//RTM data harvest every cycle
+	unsigned long long deps = 0;
+	for (int i = 0; i < x86_reg_file_int_size; i++){
+		//Bucle que recorre deps
+		printf("%llu ",reg_file->int_phreg[i]);
+		printf("\n");
+		//x86_RTM_counters_int.cycle_level_deps[0]++;
+	}
 	my_cycles = arch_x86->cycle;
 
 	/* Empty uop trace list. This dumps the last trace line for instructions
