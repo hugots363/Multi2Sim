@@ -52,9 +52,13 @@ struct x86_RTM_counters_t x86_RTM_counters_int;
 
 static void x86_move_data_to_matrix(struct x86_reg_file_t *reg_file){
 	for(int i = 0;i < x86_reg_file_int_size ;i++){
+			int currentWindow = x86_RTM_counters_int.current_win;
+			int referencias = x86_RTM_counters_int.ref_array[i].refs;
+			assert(currentWindow >= 0 && currentWindow < x86_emu_min_inst_per_ctx/windowSize);
+			assert(referencias >= 0 && referencias <= 192 );
 			//printf(" [%d]%lld ",i,x86_RTM_counters_int.ref_array[i].refs);
 			if(x86_RTM_counters_int.ref_array[i].refs < 5){
-				x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][x86_RTM_counters_int.ref_array[i].refs]++;	
+				x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][x86_RTM_counters_int.ref_array[i].refs] = x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][x86_RTM_counters_int.ref_array[i].refs] +1;	
 			}
 			else{
 				x86_RTM_counters_int.ref_window[x86_RTM_counters_int.current_win][5]++;
@@ -86,7 +90,9 @@ void RTM_data_acum(void){
 		if(x86_RTM_counters_int.ref_array[i].refs > 0){refs++;}
                 //x86_RTM_counters_int.cycle_level_deps[0]++;
         }
-	x86_RTM_counters_int.cycle_level_deps[refs]++;
+	assert(refs < x86_reg_file_int_size);
+	x86_RTM_counters_int.cycle_level_deps[refs] = x86_RTM_counters_int.cycle_level_deps[refs]  + 1;
+	
 }
 
 /* Reclaim an integer physical register, and return its identifier. */
@@ -95,7 +101,7 @@ static int x86_reg_file_int_reclaim(int core, int thread)
 	int phreg;
 	struct x86_reg_file_t *reg_file = X86_THREAD.reg_file;
 
-	printf("Core: %d,thread:%d\n",core,thread);
+	//printf("Core: %d,thread:%d\n",core,thread);
 
 	/* Obtain a register from the free list */
 	assert(reg_file->int_free_phreg_count > 0);
@@ -238,6 +244,7 @@ void x86_reg_file_init(void)
 	if(windowSize != 0){
 		ref_division = 5;
 		int num_of_windows = x86_emu_min_inst_per_ctx/windowSize;
+		printf("NWin: %d",num_of_windows);
 
 
 		x86_RTM_counters_int.ref_window = xcalloc(num_of_windows, sizeof(unsigned long long  int*));
@@ -251,7 +258,7 @@ void x86_reg_file_init(void)
 	
 		//Matrix with the x windows and the distribution of dependencies (0,1,2,3,4,5o+)
 		for(int i = 0; i< num_of_windows; i++){
-			x86_RTM_counters_int.ref_window[i] = xcalloc(ref_division, sizeof(unsigned long long  int));
+			x86_RTM_counters_int.ref_window[i] = xcalloc(ref_division+1, sizeof(unsigned long long  int));
 		}
 		//Filling the matrix with 0s
 		for(int i = 0; i< num_of_windows; i++ ){
@@ -329,10 +336,16 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 
 void x86_reg_file_free(struct x86_reg_file_t *reg_file)
 {
+	/*
+	DEBUG
+	unsigned long long int total = 0;
 	for (int i = 0; i < x86_reg_file_int_size; i++){
 		printf("r%d:%llu ",i,x86_RTM_counters_int.cycle_level_deps[i]);
+		total += x86_RTM_counters_int.cycle_level_deps[i];
         }
 	printf("\n");
+	printf("TOTAL ciclos: %llu \n\n", total);
+	*/
 	free(reg_file->int_phreg);
 	free(reg_file->int_free_phreg);
 	free(reg_file->fp_phreg);
@@ -553,7 +566,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		{
 			phreg = reg_file->int_rat[loreg - x86_dep_int_first];
 			//Counting the reservation of physical regs
-			if(phreg != -1){
+			if( phreg >= 0 && phreg <= x86_reg_file_int_size ){
 				x86_RTM_counters_int.ref_array[phreg].refs++;
 			}
 			//printf("uinst:%s\n",x86_uinst_info[uop->uinst->opcode].name);
@@ -798,7 +811,7 @@ void x86_reg_file_undo(struct x86_uop_t *uop)
                 {
                         phreg = uop->ph_idep[dep];
                         //Counting the reservation of physical regs
-                        if(phreg != -1){
+                        if(phreg >= 0 && phreg < x86_reg_file_int_size){
 				//printf(" [%d] \n", phreg);
 				x86_RTM_counters_int.ref_array[phreg].refs--;
 			}
@@ -920,7 +933,7 @@ void x86_reg_file_commit(struct x86_uop_t *uop)
                 {
                         phreg = uop->ph_idep[dep];
                         //Counting the reservation of physical regs
-                        if(phreg != -1){
+                        if(phreg >= 0 && phreg < x86_reg_file_int_size){
                                 //printf(" [%d] \n", phreg);
                                 x86_RTM_counters_int.ref_array[phreg].refs--;
                         }
@@ -928,6 +941,7 @@ void x86_reg_file_commit(struct x86_uop_t *uop)
         }
 
         if(windowSize !=  0 && x86_RTM_counters_int.current_win  < (x86_emu_min_inst_per_ctx/windowSize)   ){
+		//printf("NWindows: %d",x86_emu_min_inst_per_ctx/windowSize);
                 //printf("instxwindow = %u\n",x86_emu_min_inst_per_ctx/windowSize);
                 if(x86_RTM_counters_int.commited_inst >= windowSize ){
                         x86_RTM_counters_int.commited_inst = 0;

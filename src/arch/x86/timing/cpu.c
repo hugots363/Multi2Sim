@@ -688,11 +688,12 @@ static void x86_cpu_dump_report(void)
 
 	/* Close */
 	fclose(f);
-
+	
 	rf = file_open_for_write(reg_report_file_name);
         if (!rf){
                 return;
 	}
+	/*	
 	int num_of_windows = x86_emu_min_inst_per_ctx/windowSize;
 	fprintf(rf,"0ref,1ref,2ref,3ref,4ref,5ref\n");
 	for(int i = 0; i< num_of_windows; i++ ){
@@ -701,7 +702,18 @@ static void x86_cpu_dump_report(void)
 				else{fprintf(rf,",%llu",x86_RTM_counters_int.ref_window[i][j]);}
                         }
 			fprintf(rf,"\n");
-                }
+        }
+	*/
+	
+	//Cycle by cycle part
+	for (int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf,"%drefs,",i);
+        }
+	fprintf(rf,"\n");
+	for (int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf,"%llu,",x86_RTM_counters_int.cycle_level_deps[i]);
+        }
+	fprintf(rf,"\n");
 	
 	
 
