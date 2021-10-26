@@ -169,7 +169,7 @@ void x86_reg_file_init(void)
 	{
 		x86_reg_file_int_local_size = x86_reg_file_int_size;
 		x86_reg_file_fp_local_size = x86_reg_file_fp_size;
-		x86_reg_file_xmm_local_size = x86_reg_file_xmm_size;
+		x86_reg_file_xmm_local_size = x86_reg_file_xmm_size; 
 	}
 	else
 	{
