@@ -1183,7 +1183,6 @@ int x86_cpu_run(void)
 	if( (arch_x86->inst_count >= (WU + x86_cpu_fast_forward_count)) && WU )
 	{
 		//Problemas con este reset
-		printf("Esim-time is = %lld\n",esim_time);
 		reset_shift_stats();
 		x86_cpu_reset_stats();
 		cycles_after_reset = arch_x86->last_reset_cycle;

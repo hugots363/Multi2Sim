@@ -66,6 +66,12 @@ struct x86_reg_file_t
 	int xmm_phreg_count;
 	int *xmm_free_phreg;
 	int xmm_free_phreg_count;
+
+	/*RTM structures*/
+        int *int_number_of_consumers;
+        long long int *int_total_consumers;
+	int *fp_number_of_consumers;
+        long long int *fp_total_consumers;
 };
 
 void x86_reg_file_init(void);
