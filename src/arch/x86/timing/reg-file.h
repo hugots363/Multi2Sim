@@ -76,9 +76,9 @@ struct x86_reg_file_t
 	//Measuring time between consumptions
 	int *int_max_time;
 	int *int_min_time;
-	int *int_last_read;
+	unsigned long long int *int_last_read;
 	unsigned long long int *int_acum_time;
-	int *int_number_of_reads;
+	unsigned long long int *int_number_of_reads;
 
 	int *fp_max_time;
         int *fp_min_time;

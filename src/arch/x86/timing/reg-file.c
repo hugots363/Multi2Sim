@@ -541,9 +541,11 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 
 				//Counting time between accesses
 				int time = arch_x86->cycle -  reg_file->int_last_read[phreg];
+				assert(time >= 0);
 				if(time > reg_file->int_max_time[phreg]){reg_file->int_max_time[phreg] = time;}
 				if(time < reg_file->int_min_time[phreg]){reg_file->int_min_time[phreg] = time;}
 				if(time > 0){
+					//printf("reg(%d)->t(%d),reads(%llu),cycle(%lld),lread(%lld) \n",phreg,time,reg_file->int_number_of_reads[phreg],arch_x86->cycle, reg_file->int_last_read[phreg]);
 					reg_file->int_acum_time[phreg] += time;
 					reg_file->int_number_of_reads[phreg]++;
 				}
@@ -610,7 +612,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
 
 				//Reset of times
-				reg_file->int_last_read[phreg] = 0;   
+				reg_file->int_last_read[phreg] = arch_x86->cycle;   
 			}
 			//end
 			X86_THREAD.rat_int_writes++;

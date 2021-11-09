@@ -705,7 +705,7 @@ static void x86_cpu_dump_report(void)
 	fprintf(fr, "\n");
 	//DATA
 	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(fr, "%d,",x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);
+                fprintf(fr, "%llu,",x86_cpu->core[0].thread[0].reg_file->int_total_consumers[i]);
         }
 	for(int i = 0; i < x86_reg_file_int_size; i++){
                 fprintf(fr, "%d,",x86_cpu->core[0].thread[0].reg_file->int_max_time[i]);
@@ -716,7 +716,7 @@ static void x86_cpu_dump_report(void)
 	for(int i = 0; i < x86_reg_file_int_size; i++){
 		//if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] != 0)
 		if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] == 0){fprintf(fr,"0,");}
-		else{fprintf(fr, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_acum_time[i]/x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);}
+		else{fprintf(fr, "%llu,",x86_cpu->core[0].thread[0].reg_file->int_acum_time[i]/x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);}
         }
 	fclose(fr);
 
