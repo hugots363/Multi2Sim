@@ -487,7 +487,7 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 
 static void x86_cpu_dump_report(void)
 {
-	FILE *f;
+	FILE *f,*fr;
 	int core, thread;
 
 	long long now;
@@ -685,6 +685,41 @@ static void x86_cpu_dump_report(void)
 
 	/* Close */
 	fclose(f);
+
+	//printf("ECHO:%d\n", X86_THREAD.reg_file->int_max_time[0]);
+	fr = file_open_for_write(reg_report_file_name);
+        if (!fr && reg_report_file_name != NULL)
+		return;
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+		fprintf(fr, "consumers_r%d,",i);
+	}
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(fr, "maxt_cons_r%d,",i);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(fr, "mint_cons_r%d,",i);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(fr, "avgt_cons_r%d,",i);
+        }
+	fprintf(fr, "\n");
+	//DATA
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(fr, "%d,",x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(fr, "%d,",x86_cpu->core[0].thread[0].reg_file->int_max_time[i]);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(fr, "%d,",x86_cpu->core[0].thread[0].reg_file->int_min_time[i]);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+		//if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] != 0)
+		if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] == 0){fprintf(fr,"0,");}
+		else{fprintf(fr, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_acum_time[i]/x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);}
+        }
+	fclose(fr);
+
 }
 
 
@@ -1017,7 +1052,6 @@ void x86_cpu_dump_summary(FILE *f)
 	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
 	//Hugo printing new vars to x86 global
-	//fprintf(f,"Ciclos de ejecución = %.4g\n", arch_x86->cycle);
 }
 
 

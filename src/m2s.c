@@ -1446,6 +1446,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
                         continue;
                 }
 
+		if (!strcmp(argv[argi], "--reg-report"))
+                {
+                        m2s_need_argument(argc, argv, argi);
+                        reg_report_file_name = argv[++argi];
+                        //printf("Cogiendo los argumentos del report propio %s\n", own_report_file_name);
+                        continue;
+                }
+
 
 
 		/*

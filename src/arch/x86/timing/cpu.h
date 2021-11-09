@@ -32,7 +32,6 @@ struct x86_uop_t;
 extern int x86_cpu_error_debug_category;
 
 
-
 /* CPU variable */
 extern struct x86_cpu_t *x86_cpu;
 

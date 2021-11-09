@@ -72,6 +72,7 @@ struct mem_system_t *mem_system;
 char *mem_report_file_name = "";
 char *main_mem_report_file_name = "";
 char *own_report_file_name = "";
+char *reg_report_file_name = "";
 double stall_rob_aux;
 unsigned long long int cycles_after_reset;
 

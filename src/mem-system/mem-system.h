@@ -60,6 +60,7 @@ struct dram_system_t
 extern char *own_report_file_name;
 //
 extern char *mem_report_file_name;
+extern char *reg_report_file_name;
 
 
 #define mem_debugging() debug_status(mem_debug_category)
