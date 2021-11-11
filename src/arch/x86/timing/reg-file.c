@@ -541,7 +541,8 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 
 				//Counting time between accesses
 				int time = arch_x86->cycle -  reg_file->int_last_read[phreg];
-				assert(time >= 0);
+				//printf("Valor de time:%d, arch_x86_cycle:%lld, last_read:%lld\n",time,arch_x86->cycle, reg_file->int_last_read[phreg]);
+				//assert(time >= 0);
 				if(time > reg_file->int_max_time[phreg]){reg_file->int_max_time[phreg] = time;}
 				if(time < reg_file->int_min_time[phreg]){reg_file->int_min_time[phreg] = time;}
 				if(time > 0){

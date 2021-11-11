@@ -2082,6 +2082,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	struct prefetcher_t *pref = cache->prefetcher;
 	struct x86_ctx_t *ctx = stack->client_info->ctx;
 	/*RTM Hugo*/
+	/*
 	int set_direct = 0;
 	int desp = 0;
 	int submod = 0;
@@ -2092,7 +2093,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	int nheaders = mod->headers;
 	int header = 0;
 	//int submod = 0;
-	
+	*/
 
 
 
@@ -2183,7 +2184,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		struct mod_port_t *port = stack->port;
 		struct dir_lock_t *dir_lock;
 		int aux_access_type = -1;
-		int swap_pen = 0;
+		//int swap_pen = 0;
 		//struct cache_block_t *block_lru;
 		if( !strcmp(mod->name,"dl1-0") ){ stack->access_type = ACCESS_DATA;}
                 else if( !strcmp(mod->name,"il1-0") ){stack->access_type = ACCESS_INSTRUCTION;}	
@@ -2413,7 +2414,8 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		if(stack->request_dir == mod_request_down_up){mod->accesses_down_up++;}
 		else if(stack->request_dir == mod_request_up_down){mod->accesses_up_down++;}
 		else if(stack->request_dir == mod_request_invalid){mod->accesses_invalid++;}
-		*/		
+		*/
+		/*	
                 if(  mod->RTM  )
 		{	 
 			 //fprintf(stderr,"Directo, enlazado\n");
@@ -2422,14 +2424,14 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                           //      }
 			
 
-			/* Calculating header penalty, 
+			// Calculating header penalty, 
 				int tipo_acc = 2;
 				if(stack->read){tipo_acc = 0;}
                                 else {tipo_acc = 1;}	
 				fprintf(stderr,"%lld\t%s\t%x\t%d\t%d\t%d\t",esim_cycle(), mod->name, stack->addr, stack->set,stack->way, stack->hit);
 				fprintf(stderr,"Num_lock_ports= %d 0-lec,1-esc= %d  \n",mod->num_locked_ports,tipo_acc);
-			*/
-			/*	
+			//
+			//	
 				FILE *fd = fopen("prueba.txt","a");		
                         	for(int i = 0; i < mod->headers/mod->submodulos;i++ ){
                                		fprintf(stderr,"%d\t",mod->RTM_data[0].headers_pos[i]);
@@ -2437,7 +2439,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
                         	}
 				fprintf(fd,"\n");
 				fclose(fd);
-			*/	
+			//	
 		
 			
                  
@@ -2509,14 +2511,14 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		}
 			if(mod->TapeCache == 1){
 				submod = (stack->set/(mod->cache->num_sets/mod->submodulos));
-				/*
+				//
 				int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);
 				printf("Cycle=%lld\t Way=%d\tSet= %d\t Submod=%d\t Set-f= %d\t R=%u\t W=%u\t" ,esim_cycle(),stack->way,stack->set,submod, set_f ,stack->read,stack->write);
 				for(int i = 0; i<mod->headers/mod->submodulos;i++){
 					printf("Header-prev%d=%d\t",i,mod->RTM_data[submod].TC_headpos[stack->way][i]);
 				}
 				printf("SpeedyWay=%d\t desp=%d\n",mod->RTM_data[0].speedyWay[stack->set],calc_desp_menor_TC(stack->set,submod, mod,stack->way,stack->write));
-				*/
+				//
 				desp_menor = calc_desp_menor_TC(stack->set,submod, mod,stack->way,stack->write);
 				if(swap_needed(stack->set,stack->way,mod)){
 					swap_pen = 2;
@@ -2526,18 +2528,20 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				
 			}
 			
-					
+		*/			
 		/* Access latency */
 		if (!stack->hit && !stack->background && prefetcher_uses_stream_buffers(pref))
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM, stack, 0); /* TODO: Zero? */
+		/*
 		else if( mod->RTM || mod->TapeCache){
 			if(stack->write){esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp_menor)+swap_pen +  mod->dir_latency); }
 			else{esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, abs(desp_menor) + swap_pen +  mod->dir_latency); }
 		}
+		*/
 		else{
 			esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency);
 		}
-
+		
 		/* End of my code*/
 		return;
 	}
@@ -2918,7 +2922,7 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 		if(stack->request_dir == mod_request_down_up){mod->accesses_down_up++;}
 		else if(stack->request_dir == mod_request_up_down){mod->accesses_up_down++;}
 		else if(stack->request_dir == mod_request_invalid){mod->accesses_invalid++;}
-		
+		/*
 		if(mod->RTM){
 				desp_menor = calc_desp_menor(stack->set, mod);
                                 int setsxsub = mod->cache->num_sets/mod->submodulos;
@@ -2944,13 +2948,13 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 			//int set_f = stack->set % (mod->cache->num_sets/mod->submodulos);
 			
 			//DEBUG	
-			/*
+			//
                         printf("Cycle=%lld\t Way=%d\tSet=%d\t Submod=%d\t Set-f=%d\t R=%u\t W=%u\t" ,esim_cycle(),stack->way,stack->set,submod, set_f ,stack->read,stack->write);
                         for(int i = 0; i<mod->headers/mod->submodulos;i++){
                         	printf("Header-prev%d=%d\t",i,mod->RTM_data[submod].TC_headpos[stack->way][i]);
                         }
                         printf("SpeedyWay=%d\t desp=%d\n",mod->RTM_data[0].speedyWay[stack->set],desp_menor);
-			*/
+			//
 			
 			//submod = ((stack->set)/(setsxsub));
                         //desp_menor = calc_desp_menor_TC(stack->set,submod, mod, stack->way, stack->write);
@@ -2966,7 +2970,7 @@ if (event == EV_MOD_NMOESI_FIND_AND_LOCK_PREF_STREAM)
 			//printf("Set:%d\t Pen[%d]:%lld\n",stack->set, abs(desp_menor), mod->RTM_data[submod].penalizations[stack->way][abs(desp_menor)]);
 						
 		}
-			
+		*/	
 
 			/* Cache hits, misses, retries... */
 			if (stack->hit)
