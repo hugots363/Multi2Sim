@@ -25,6 +25,7 @@
 #include "cpu.h"
 #include "reg-file.h"
 #include "rob.h"
+#include <arch/common/arch.h>
 
 
 /* Global variables */
@@ -169,7 +170,7 @@ void x86_reg_file_init(void)
 	{
 		x86_reg_file_int_local_size = x86_reg_file_int_size;
 		x86_reg_file_fp_local_size = x86_reg_file_fp_size;
-		x86_reg_file_xmm_local_size = x86_reg_file_xmm_size;
+		x86_reg_file_xmm_local_size = x86_reg_file_xmm_size; 
 	}
 	else
 	{
@@ -192,6 +193,7 @@ void x86_reg_file_done(void)
 {
 	int core;
 	int thread;
+
 
 	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 		x86_reg_file_free(X86_THREAD.reg_file);
@@ -238,6 +240,57 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 	for (phreg = 0; phreg < xmm_size; phreg++)
 		reg_file->xmm_free_phreg[phreg] = phreg;
 
+	/*RTM structures*/
+	reg_file->int_number_of_consumers = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	reg_file->int_total_consumers = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	for(int i = 0; i < x86_reg_file_int_size; i++)
+	{
+		reg_file->int_number_of_consumers[i] = 0;
+		reg_file->int_total_consumers[i] = 0;
+		//printf("%d  ",i);
+	}
+
+	reg_file->fp_number_of_consumers = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_total_consumers = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        for(int i = 0; i < x86_reg_file_fp_size; i++)
+        {
+                reg_file->fp_number_of_consumers[i] = 0;
+                reg_file->fp_total_consumers[i] = 0;
+                //printf("%d  ",i);
+        }
+
+	reg_file->int_max_time = xcalloc(x86_reg_file_int_size,sizeof(long long int)); 
+        reg_file->int_min_time = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+        reg_file->int_last_read = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+        reg_file->int_acum_time = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+        reg_file->int_number_of_reads = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+
+	reg_file->fp_max_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_min_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_last_read = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_acum_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_number_of_reads = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+
+	for(int i = 0; i < x86_reg_file_int_size; i++)
+        {
+		reg_file->int_max_time[i] = 0;
+		reg_file->int_min_time[i] = 999999999;
+		reg_file->int_last_read[i] = 0;
+		reg_file->int_acum_time[i] = 0;
+		reg_file->int_number_of_reads[i] = 0;
+
+        }
+
+	for(int i = 0; i < x86_reg_file_fp_size; i++)
+        {
+                reg_file->fp_max_time[i] = 0;
+                reg_file->fp_min_time[i] = 99999999;
+                reg_file->fp_last_read[i] = 0;
+                reg_file->fp_acum_time[i] = 0;
+                reg_file->fp_number_of_reads[i] = 0;
+
+        }
+
 	/* Return */
 	return reg_file;
 }
@@ -245,6 +298,24 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 
 void x86_reg_file_free(struct x86_reg_file_t *reg_file)
 {
+	//DEBUG
+	/*
+	for(int i = 0; i < x86_reg_file_int_size; i++)
+        {
+		printf("%d: int(%llu),fp(%llu)\n",i,reg_file->int_total_consumers[i],reg_file->fp_total_consumers[i]);
+                //printf("%d  ",i);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++)
+        {
+		unsigned long long int avg = 0;
+		if(reg_file->int_acum_time[i] != 0 && reg_file->int_number_of_reads[i] != 0){
+			avg = reg_file->int_acum_time[i]/reg_file->int_number_of_reads[i];
+		}
+                printf("%d:min(%d),max(%d),avg(%lld)\n",i,reg_file->int_min_time[i],reg_file->int_max_time[i],avg);
+		//printf("%d:min(%d),max(%d),acum(%lld),reads(%d)\n",i,reg_file->int_min_time[i],reg_file->int_max_time[i],reg_file->int_acum_time[i],reg_file->int_number_of_reads[i]) ;
+                //printf("%d  ",i);
+        }
+	*/
 	free(reg_file->int_phreg);
 	free(reg_file->int_free_phreg);
 	free(reg_file->fp_phreg);
@@ -441,6 +512,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 	int thread = uop->thread;
 	struct x86_reg_file_t *reg_file = X86_THREAD.reg_file;
 
+	//printf("%d:%s \n",uop->uinst->opcode,x86_uinst_info[uop->uinst->opcode].name);
 	/* Update floating-point top of stack */
 	if (uop->uinst->opcode == x86_uinst_fp_pop)
 	{
@@ -460,7 +532,26 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		if (X86_DEP_IS_INT_REG(loreg))
 		{
 			phreg = reg_file->int_rat[loreg - x86_dep_int_first];
+			//printf("i%d(lg:%d,ph:%d)  ",dep,loreg,phreg );
 			uop->ph_idep[dep] = phreg;
+			//RTM
+			if(phreg != -1){
+				reg_file->int_number_of_consumers[phreg]++;
+				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
+
+				//Counting time between accesses
+				int time = arch_x86->cycle -  reg_file->int_last_read[phreg];
+				//printf("Valor de time:%d, arch_x86_cycle:%lld, last_read:%lld\n",time,arch_x86->cycle, reg_file->int_last_read[phreg]);
+				//assert(time >= 0);
+				if(time > reg_file->int_max_time[phreg]){reg_file->int_max_time[phreg] = time;}
+				if(time < reg_file->int_min_time[phreg]){reg_file->int_min_time[phreg] = time;}
+				if(time > 0){
+					//printf("reg(%d)->t(%d),reads(%llu),cycle(%lld),lread(%lld) \n",phreg,time,reg_file->int_number_of_reads[phreg],arch_x86->cycle, reg_file->int_last_read[phreg]);
+					reg_file->int_acum_time[phreg] += time;
+					reg_file->int_number_of_reads[phreg]++;
+				}
+				reg_file->int_last_read[phreg] = arch_x86->cycle;
+			}
 			X86_THREAD.rat_int_reads++;
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
@@ -472,6 +563,9 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			/* Rename it. */
 			phreg = reg_file->fp_rat[streg - x86_dep_fp_first];
 			uop->ph_idep[dep] = phreg;
+			//RTM
+			if(phreg != -1)
+				reg_file->fp_number_of_consumers[phreg]++;
 			X86_THREAD.rat_fp_reads++;
 		}
 		else if (X86_DEP_IS_XMM_REG(loreg))
@@ -485,7 +579,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			uop->ph_idep[dep] = -1;
 		}
 	}
-
+	//printf("\n");
 	/* Rename output int/FP/XMM registers (not flags) */
 	flag_phreg = -1;
 	flag_count = 0;
@@ -504,6 +598,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			reg_file->int_phreg[phreg].busy++;
 			reg_file->int_phreg[phreg].pending = 1;
 			ophreg = reg_file->int_rat[loreg - x86_dep_int_first];
+			//printf("o%d(lg:%d,ph:%d)  ",dep,loreg,phreg );
 			if (flag_phreg < 0)
 				flag_phreg = phreg;
 
@@ -511,6 +606,16 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			uop->ph_odep[dep] = phreg;
 			uop->ph_oodep[dep] = ophreg;
 			reg_file->int_rat[loreg - x86_dep_int_first] = phreg;
+			//RTM
+			if(phreg != -1){
+				reg_file->int_total_consumers[reg_file->int_number_of_consumers[phreg]]++;
+				reg_file->int_number_of_consumers[phreg] = 0;
+				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
+
+				//Reset of times
+				reg_file->int_last_read[phreg] = arch_x86->cycle;   
+			}
+			//end
 			X86_THREAD.rat_int_writes++;
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
@@ -529,6 +634,12 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			uop->ph_odep[dep] = phreg;
 			uop->ph_oodep[dep] = ophreg;
 			reg_file->fp_rat[streg - x86_dep_fp_first] = phreg;
+			//RTM
+			if(phreg != -1){
+                        	reg_file->fp_total_consumers[reg_file->fp_number_of_consumers[phreg]]++;
+                        	reg_file->fp_number_of_consumers[phreg] = 0;
+			}
+                        //end
 			X86_THREAD.rat_fp_writes++;
 		}
 		else if (X86_DEP_IS_XMM_REG(loreg))
@@ -552,6 +663,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			uop->ph_oodep[dep] = -1;
 		}
 	}
+	//printf("\n");
 
 	/* Rename flags */
 	if (flag_count > 0) {
@@ -641,6 +753,7 @@ void x86_reg_file_undo(struct x86_uop_t *uop)
 	/* Undo mappings in reverse order, in case an instruction has a
 	 * duplicated output dependence. */
 	assert(uop->specmode);
+	//printf("UNDO\n");
 	for (dep = X86_UINST_MAX_ODEPS - 1; dep >= 0; dep--)
 	{
 		loreg = uop->uinst->odep[dep];
@@ -886,3 +999,4 @@ void x86_reg_file_check_integrity(int core, int thread)
 		}
 	}
 }
+

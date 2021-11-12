@@ -61,6 +61,7 @@ int mem_domain_index;
 struct mem_system_t *mem_system;
 
 char *mem_report_file_name = "";
+char *reg_report_file_name;
 char *main_mem_report_file_name = "";
 
 
