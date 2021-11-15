@@ -37,7 +37,6 @@
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
-#include <mem-system/mem-system.h>
 #include <mem-system/module.h>
 #include <mem-system/prefetch-history.h>
 
@@ -58,7 +57,7 @@
 /*
  * Global variables
  */
-extern unsigned long long int my_cycles;
+
 
 /* Help message */
 
@@ -254,15 +253,10 @@ char *x86_config_help =
 
 /* Main Processor Global Variable */
 struct x86_cpu_t *x86_cpu;
-//Hugo global var
-long long WU;
-extern double  stall_rob_aux;
-extern unsigned long long int ciclos_tot;
-extern unsigned long long int cycles_after_reset;
-extern struct mem_system_t *mem_system; 
 
 /* Trace */
 int x86_trace_category;
+
 
 /* Configuration file and parameters */
 
@@ -487,7 +481,7 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 
 static void x86_cpu_dump_report(void)
 {
-	FILE *f,*fr;
+	FILE *f;
 	int core, thread;
 
 	long long now;
@@ -683,41 +677,6 @@ static void x86_cpu_dump_report(void)
 
 	/* Close */
 	fclose(f);
-
-	//printf("ECHO:%d\n", X86_THREAD.reg_file->int_max_time[0]);
-	fr = file_open_for_write(reg_report_file_name);
-        if (!fr && reg_report_file_name != NULL)
-		return;
-	for(int i = 0; i < x86_reg_file_int_size; i++){
-		fprintf(fr, "consumers_r%d,",i);
-	}
-	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(fr, "maxt_cons_r%d,",i);
-        }
-	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(fr, "mint_cons_r%d,",i);
-        }
-	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(fr, "avgt_cons_r%d,",i);
-        }
-	fprintf(fr, "\n");
-	//DATA
-	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(fr, "%llu,",x86_cpu->core[0].thread[0].reg_file->int_total_consumers[i]);
-        }
-	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(fr, "%d,",x86_cpu->core[0].thread[0].reg_file->int_max_time[i]);
-        }
-	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(fr, "%d,",x86_cpu->core[0].thread[0].reg_file->int_min_time[i]);
-        }
-	for(int i = 0; i < x86_reg_file_int_size; i++){
-		//if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] != 0)
-		if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] == 0){fprintf(fr,"0,");}
-		else{fprintf(fr, "%llu,",x86_cpu->core[0].thread[0].reg_file->int_acum_time[i]/x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);}
-        }
-	fclose(fr);
-
 }
 
 
@@ -803,8 +762,6 @@ void x86_cpu_read_config(void)
 
 	if (x86_cpu_fast_forward_count <= 0)
 		x86_cpu_fast_forward_count = config_read_llint(config, section, "FastForward", 0);
-	//Hugo 
-	WU =  config_read_llint(config, section, "WarmUp", 0);
 
 	x86_cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
 	x86_cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
@@ -1049,7 +1006,6 @@ void x86_cpu_dump_summary(FILE *f)
 	fprintf(f, "CommittedMicroInstructions = %lld\n", x86_cpu->num_committed_uinst);
 	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
-	//Hugo printing new vars to x86 global
 }
 
 
@@ -1210,6 +1166,7 @@ int x86_cpu_run(void)
 		x86_emu_max_inst -= x86_cpu_fast_forward_count;
 		x86_emu_min_inst_per_ctx -= x86_cpu_fast_forward_count;
 	}
+
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && x86_cpu->num_committed_inst >= x86_emu_max_inst)
 		esim_finish = esim_finish_x86_max_inst;
@@ -1337,7 +1294,6 @@ static void x86_cpu_thread_interval_report_init(int core, int thread)
 	struct x86_thread_report_stack_t *stack;
 	char interval_report_file_name[MAX_PATH_SIZE];
 	int ret;
-	
 
 	/* Create new stack */
 	stack = xcalloc(1, sizeof(struct x86_thread_report_stack_t));
@@ -1395,7 +1351,8 @@ static void x86_cpu_thread_interval_report(int core, int thread)
 	double ipc_alone_glob;
 	double interthread_penalty_cycles_int;
 	double dispatch_total_slots = 0;
-	double dispatch_stall_int[x86_dispatch_stall_max];	
+	double dispatch_stall_int[x86_dispatch_stall_max];
+
 	/* Ratio of usage and stall of dispatch slots */
 	for (int i = 0; i < x86_dispatch_stall_max; i++)
 	{
