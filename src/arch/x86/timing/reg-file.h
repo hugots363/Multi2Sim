@@ -43,6 +43,7 @@ struct x86_phreg_t
 	int busy;  /* number of mapped logical registers */
 };
 
+
 struct x86_reg_file_t
 {
 	/* Integer registers */
@@ -66,6 +67,26 @@ struct x86_reg_file_t
 	int xmm_phreg_count;
 	int *xmm_free_phreg;
 	int xmm_free_phreg_count;
+
+	/*RTM structures*/
+        int *int_number_of_consumers;
+        long long int *int_total_consumers;
+	int *fp_number_of_consumers;
+        long long int *fp_total_consumers;
+	//Measuring time between consumptions
+	int *int_max_time;
+	int *int_min_time;
+	unsigned long long int *int_last_read;
+	unsigned long long int *int_acum_time;
+	unsigned long long int *int_number_of_reads;
+
+	int *fp_max_time;
+        int *fp_min_time;
+        int *fp_last_read;
+        unsigned long long int *fp_acum_time;
+        int *fp_number_of_reads;
+
+		
 };
 
 void x86_reg_file_init(void);
@@ -86,4 +107,5 @@ void x86_reg_file_check_integrity(int core, int thread);
 
 
 #endif
+
 

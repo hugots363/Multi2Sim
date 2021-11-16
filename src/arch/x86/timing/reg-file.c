@@ -238,6 +238,57 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 	for (phreg = 0; phreg < xmm_size; phreg++)
 		reg_file->xmm_free_phreg[phreg] = phreg;
 
+	/*RTM structures*/
+	reg_file->int_number_of_consumers = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	reg_file->int_total_consumers = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	for(int i = 0; i < x86_reg_file_int_size; i++)
+	{
+		reg_file->int_number_of_consumers[i] = 0;
+		reg_file->int_total_consumers[i] = 0;
+		//printf("%d  ",i);
+	}
+
+	reg_file->fp_number_of_consumers = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_total_consumers = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        for(int i = 0; i < x86_reg_file_fp_size; i++)
+        {
+                reg_file->fp_number_of_consumers[i] = 0;
+                reg_file->fp_total_consumers[i] = 0;
+                //printf("%d  ",i);
+        }
+
+	reg_file->int_max_time = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+        reg_file->int_min_time = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+        reg_file->int_last_read = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+        reg_file->int_acum_time = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+        reg_file->int_number_of_reads = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+
+	reg_file->fp_max_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_min_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_last_read = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_acum_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+        reg_file->fp_number_of_reads = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+
+	for(int i = 0; i < x86_reg_file_int_size; i++)
+        {
+		reg_file->int_max_time[i] = 0;
+		reg_file->int_min_time[i] = 999999999;
+		reg_file->int_last_read[i] = 0;
+		reg_file->int_acum_time[i] = 0;
+		reg_file->int_number_of_reads[i] = 0;
+
+        }
+
+	for(int i = 0; i < x86_reg_file_fp_size; i++)
+        {
+                reg_file->fp_max_time[i] = 0;
+                reg_file->fp_min_time[i] = 99999999;
+                reg_file->fp_last_read[i] = 0;
+                reg_file->fp_acum_time[i] = 0;
+                reg_file->fp_number_of_reads[i] = 0;
+
+        }
+
 	/* Return */
 	return reg_file;
 }
