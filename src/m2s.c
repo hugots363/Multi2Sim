@@ -937,6 +937,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* RTM used in regFile report */
+		if (!strcmp(argv[argi], "--reg-report"))
+                {
+                        m2s_need_argument(argc, argv, argi);
+                        reg_report_file_name = argv[++argi];
+                        continue;
+                }
+
 
 		/*
 		 * Evergreen GPU Options

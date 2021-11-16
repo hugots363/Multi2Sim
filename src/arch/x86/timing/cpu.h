@@ -38,7 +38,7 @@ extern struct x86_cpu_t *x86_cpu;
 
 extern char *x86_config_help;
 
-
+extern char *reg_report_file_name;
 
 /* Processor parameters */
 

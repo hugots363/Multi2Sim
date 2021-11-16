@@ -70,37 +70,6 @@ int max_mod_level;
  * Public Functions
  */
 
-//Hugo creating last_used_set_create 
-struct mod_last_used_set_t *mod_last_used_set_create(int num_sets, int assoc)
-{	
-
-	struct mod_last_used_set_t *mod_last_used_set = xcalloc(1, sizeof(struct mod_last_used_set_t));
-	
-	/* space */
-	//int **added_cycles = xcalloc(num_sets*assoc, sizeof(int));
-	int *last_used_set = xcalloc(assoc ,sizeof(int));
-	int **added_cycles = xcalloc(assoc ,sizeof(int*));
-
-	for(int i = 0; i < assoc    ;i++)
-	{
-		//Edited
-		added_cycles[i] = xcalloc(num_sets,sizeof(int));
-		//added_cycles[i] = 0;
-	}
-
-	for (int i = 0; i < assoc; i++)
-		for (int j = 0; j < num_sets; j++)
-			added_cycles[i][j] = 0;
-		
-
-	/* pointers */
-	mod_last_used_set->added_cycles = added_cycles;
-	mod_last_used_set->last_used_set = last_used_set;
-
-	/* return */
-	return mod_last_used_set;
-}
-
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	int block_size, int latency)
 {

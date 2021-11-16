@@ -1187,10 +1187,6 @@ static void mem_config_read_modules(struct config_t *config)
 	char buf[MAX_STRING_SIZE];
 	char mod_name[MAX_STRING_SIZE];
         
-	//Hugo adding penalty by head movement
-        //int mov_cabezal;
-        int RTM;	
-
 	int i;
 
 	/* Create modules */
@@ -1226,21 +1222,8 @@ static void mem_config_read_modules(struct config_t *config)
 			fatal("%s: %s: invalid or missing value for 'Type'.\n%s",
 					mem_config_file_name, mod_name,
 					mem_err_config_note);
-		//Hugo getting new vars
-       		//mov_cabezal = config_read_int(config, section, "PenalizacionCabezal", 0);
-        	RTM = config_read_int(config, section, "RTM", 0);
 		
 		
-        	/*Penalty by moving the headers, Hugo */
-        	//mod->cache->mov_cabezal = mov_cabezal;
-
-        	/*RTM variable, */
-
-
-        	mod->mod_last_used_set = mod_last_used_set_create(mod->cache->num_sets, mod->cache->assoc);
-        	mod->RTM = RTM;
-		//End
-
 
 		/* Read module address range */
 		mem_config_read_module_address_range(config, mod, section);

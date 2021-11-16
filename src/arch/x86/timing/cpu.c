@@ -58,7 +58,7 @@
  * Global variables
  */
 
-
+char *reg_report_file_name = "";
 /* Help message */
 
 char *x86_config_help =
@@ -926,7 +926,7 @@ void x86_cpu_dump(FILE *f)
 {
 	int core;
 	int thread;
-
+	
 	/* General information */
 	fprintf(f, "\n");
 	fprintf(f, "LastDump = %lld   ; Cycle of last dump\n", x86_cpu->last_dump);
@@ -984,7 +984,7 @@ void x86_cpu_dump(FILE *f)
 	x86_cpu->last_committed = x86_cpu->num_committed_uinst;
 
 	/* End */
-	fprintf(f, "\n\n");
+	
 }
 
 
@@ -993,6 +993,12 @@ void x86_cpu_dump_summary(FILE *f)
 	double inst_per_cycle;
 	double uinst_per_cycle;
 	double branch_acc;
+
+	//Hugo RTMs
+        FILE *rf;
+        rf = file_open_for_write(reg_report_file_name);
+        if (!rf)
+                return;
 
 	/* Calculate statistics */
 	inst_per_cycle = arch_x86->cycle ? (double) x86_cpu->num_committed_inst / (arch_x86->cycle - arch_x86->last_reset_cycle) : 0.0;
@@ -1006,6 +1012,12 @@ void x86_cpu_dump_summary(FILE *f)
 	fprintf(f, "CommittedMicroInstructions = %lld\n", x86_cpu->num_committed_uinst);
 	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
+	
+
+	fprintf(f, "\n\n");
+        fprintf(rf, "----------------\n");
+        fprintf(rf,"NOMBRE:%s \n\n", reg_report_file_name);
+        fclose(rf);
 }
 
 
