@@ -1019,21 +1019,36 @@ void x86_cpu_dump_summary(FILE *f)
 
 	if (!rf && reg_report_file_name != NULL)
 		return;
+	//int
 	for(int i = 0; i < x86_reg_file_int_size; i++){
-		fprintf(rf, "consumers_r%d,",i);
+		fprintf(rf, "int_consumers_r%d,",i);
 	}
 	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(rf, "maxt_cons_r%d,",i);
+                fprintf(rf, "int_maxt_cons_r%d,",i);
         }
 	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(rf, "mint_cons_r%d,",i);
+                fprintf(rf, "int_mint_cons_r%d,",i);
         }
 	for(int i = 0; i < x86_reg_file_int_size; i++){
-                fprintf(rf, "avgt_cons_r%d,",i);
+                fprintf(rf, "int_avgt_cons_r%d,",i);
+        }
+	//fp
+	for(int i = 0; i < x86_reg_file_fp_size; i++){
+                fprintf(rf, "fp_consumers_r%d,",i);
+        }
+        for(int i = 0; i < x86_reg_file_fp_size; i++){
+                fprintf(rf, "fp_maxt_cons_r%d,",i);
+        }
+        for(int i = 0; i < x86_reg_file_fp_size; i++){
+                fprintf(rf, "fp_mint_cons_r%d,",i);
+        }
+        for(int i = 0; i < x86_reg_file_fp_size; i++){
+                fprintf(rf, "int_avgt_cons_r%d,",i);
         }
 	fprintf(rf, "Ciclos");
 	fprintf(rf, "\n");
 	//DATA
+	//int
 	for(int i = 0; i < x86_reg_file_int_size; i++){
                 fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);
         }
@@ -1047,6 +1062,20 @@ void x86_cpu_dump_summary(FILE *f)
 		//if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] != 0)
 		if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] == 0){fprintf(rf,"0,");}
 		else{fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_acum_time[i]/x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);}
+        }
+	//fp
+	for(int i = 0; i < x86_reg_file_fp_size; i++){
+                fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->fp_number_of_reads[i]);
+        }
+        for(int i = 0; i < x86_reg_file_fp_size; i++){
+                fprintf(rf, "%d,",x86_cpu->core[0].thread[0].reg_file->fp_max_time[i]);
+        }
+        for(int i = 0; i < x86_reg_file_fp_size; i++){
+                fprintf(rf, "%d,",x86_cpu->core[0].thread[0].reg_file->fp_min_time[i]);
+        }
+        for(int i = 0; i < x86_reg_file_fp_size; i++){
+                if(x86_cpu->core[0].thread[0].reg_file->fp_acum_time[i] == 0){fprintf(rf,"0,");}
+                else{fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->fp_acum_time[i]/x86_cpu->core[0].thread[0].reg_file->fp_number_of_reads[i]);}
         }
 	fprintf(rf,"%lld",ciclos );
         fclose(rf);

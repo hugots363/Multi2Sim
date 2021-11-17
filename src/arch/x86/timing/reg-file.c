@@ -544,6 +544,21 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			phreg = reg_file->fp_rat[streg - x86_dep_fp_first];
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_fp_reads++;
+
+			//RTM
+                        if(phreg > -1 ){
+                                reg_file->fp_number_of_consumers[phreg]++;
+                                //Counting time between accesses
+                                int time = ciclos  -  reg_file->fp_last_read[phreg];
+                                if(time > reg_file->fp_max_time[phreg]){reg_file->fp_max_time[phreg] = time;}
+                                if(time < reg_file->fp_min_time[phreg]){reg_file->fp_min_time[phreg] = time;}
+                                if(time > 0){
+                                        reg_file->fp_acum_time[phreg] += time;
+                                        reg_file->fp_number_of_reads[phreg]++;
+                                }
+                                reg_file->fp_last_read[phreg] = ciclos;
+                        }
+			//end RTM
 		}
 		else if (X86_DEP_IS_XMM_REG(loreg))
 		{
@@ -573,8 +588,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			/* Reclaim a free integer register */
 			phreg = x86_reg_file_int_reclaim(core, thread);
 
-			//RTM
-			
+			//RTM	
 			if(phreg > -1){
 
 				if(reg_file->int_number_of_consumers[phreg] < x86_reg_file_int_size)
@@ -622,6 +636,25 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			uop->ph_oodep[dep] = ophreg;
 			reg_file->fp_rat[streg - x86_dep_fp_first] = phreg;
 			X86_THREAD.rat_fp_writes++;
+
+			//RTM
+                        if(phreg > -1){
+
+                                if(reg_file->fp_number_of_consumers[phreg] < x86_reg_file_fp_size)
+                                {
+                                        reg_file->fp_total_consumers[reg_file->fp_number_of_consumers[phreg]]++;
+                                }
+                                else{
+                                        reg_file->fp_total_consumers[x86_reg_file_fp_size]++;
+                                }
+                                reg_file->fp_number_of_consumers[phreg] = 0;
+                                //printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
+
+                                //Reset of times
+                                reg_file->fp_last_read[phreg] = ciclos;
+                        }
+
+                        //end
 		}
 		else if (X86_DEP_IS_XMM_REG(loreg))
 		{

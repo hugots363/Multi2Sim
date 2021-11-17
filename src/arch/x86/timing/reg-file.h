@@ -84,9 +84,9 @@ struct x86_reg_file_t
 
 	int *fp_max_time;
         int *fp_min_time;
-        int *fp_last_read;
+        unsigned long long int *fp_last_read;
         unsigned long long int *fp_acum_time;
-        int *fp_number_of_reads;
+        unsigned long long int *fp_number_of_reads;
 
 
 		
