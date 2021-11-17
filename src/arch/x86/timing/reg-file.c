@@ -511,6 +511,29 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		if (X86_DEP_IS_INT_REG(loreg))
 		{
 			phreg = reg_file->int_rat[loreg - x86_dep_int_first];
+
+			//RTM
+			if(phreg > -1 ){
+				reg_file->int_number_of_consumers[phreg]++;
+				if(reg_file->int_number_of_consumers[phreg] > 10){
+					printf("phreg(%d), consumers(%d), loreg(%d)\n",phreg,reg_file->int_number_of_consumers[phreg],loreg);
+				}
+				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
+
+				//Counting time between accesses
+				int time = ciclos  -  reg_file->int_last_read[phreg];
+				//printf("Valor de time:%d, arch_x86_cycle:%lld, last_read:%lld\n",time,arch_x86->cycle, reg_file->int_last_read[phreg]);
+				//assert(time >= 0);
+				if(time > reg_file->int_max_time[phreg]){reg_file->int_max_time[phreg] = time;}
+				if(time < reg_file->int_min_time[phreg]){reg_file->int_min_time[phreg] = time;}
+				if(time > 0){
+					//printf("reg(%d)->t(%d),reads(%llu),cycle(%lld),lread(%lld) \n",phreg,time,reg_file->int_number_of_reads[phreg],arch_x86->cycle, reg_file->int_last_read[phreg]);
+					reg_file->int_acum_time[phreg] += time;
+					reg_file->int_number_of_reads[phreg]++;
+				}
+				reg_file->int_last_read[phreg] = ciclos;
+			}
+
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_int_reads++;
 		}
@@ -552,6 +575,28 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		{
 			/* Reclaim a free integer register */
 			phreg = x86_reg_file_int_reclaim(core, thread);
+
+			//RTM
+			
+			if(phreg > -1){
+
+				printf("ciclo(%lld),phreg(%d) nConsumers(%d)\n",ciclos, phreg,reg_file->int_number_of_consumers[phreg]);
+				if(reg_file->int_number_of_consumers[phreg] < x86_reg_file_int_size)
+				{	
+					reg_file->int_total_consumers[reg_file->int_number_of_consumers[phreg]]++;
+				}
+				else{
+					reg_file->int_total_consumers[x86_reg_file_int_size]++;
+				}
+				reg_file->int_number_of_consumers[phreg] = 0;
+				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
+
+				//Reset of times
+				reg_file->int_last_read[phreg] = ciclos;  
+			}
+			
+			//end
+
 			reg_file->int_phreg[phreg].busy++;
 			reg_file->int_phreg[phreg].pending = 1;
 			ophreg = reg_file->int_rat[loreg - x86_dep_int_first];

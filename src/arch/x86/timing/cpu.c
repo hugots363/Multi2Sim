@@ -59,6 +59,7 @@
  */
 
 char *reg_report_file_name = "";
+unsigned long long int ciclos = 0;
 /* Help message */
 
 char *x86_config_help =
@@ -1017,6 +1018,7 @@ void x86_cpu_dump_summary(FILE *f)
 	fprintf(f, "\n\n");
         fprintf(rf, "----------------\n");
         fprintf(rf,"NOMBRE:%s \n\n", reg_report_file_name);
+	fprintf(rf, "ciclos(%lld)",ciclos);
         fclose(rf);
 }
 
@@ -1219,6 +1221,7 @@ int x86_cpu_run(void)
 
 	/* One more cycle of x86 timing simulation */
 	arch_x86->cycle++;
+	ciclos++;
 
 	/* Empty uop trace list. This dumps the last trace line for instructions
 	 * that were freed in the previous simulation cycle. */

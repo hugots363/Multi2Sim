@@ -37,6 +37,8 @@ extern int x86_reg_file_int_size;
 extern int x86_reg_file_fp_size;
 extern int x86_reg_file_xmm_size;
 
+extern unsigned long long int ciclos;
+
 struct x86_phreg_t
 {
 	int pending;  /* not completed (bit) */
@@ -85,6 +87,7 @@ struct x86_reg_file_t
         int *fp_last_read;
         unsigned long long int *fp_acum_time;
         int *fp_number_of_reads;
+
 
 		
 };
