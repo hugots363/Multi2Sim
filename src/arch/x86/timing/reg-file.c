@@ -515,9 +515,6 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			//RTM
 			if(phreg > -1 ){
 				reg_file->int_number_of_consumers[phreg]++;
-				if(reg_file->int_number_of_consumers[phreg] > 10){
-					printf("phreg(%d), consumers(%d), loreg(%d)\n",phreg,reg_file->int_number_of_consumers[phreg],loreg);
-				}
 				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
 
 				//Counting time between accesses
@@ -580,7 +577,6 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			
 			if(phreg > -1){
 
-				printf("ciclo(%lld),phreg(%d) nConsumers(%d)\n",ciclos, phreg,reg_file->int_number_of_consumers[phreg]);
 				if(reg_file->int_number_of_consumers[phreg] < x86_reg_file_int_size)
 				{	
 					reg_file->int_total_consumers[reg_file->int_number_of_consumers[phreg]]++;

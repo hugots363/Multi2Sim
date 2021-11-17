@@ -1015,10 +1015,40 @@ void x86_cpu_dump_summary(FILE *f)
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
 	
 
-	fprintf(f, "\n\n");
-        fprintf(rf, "----------------\n");
-        fprintf(rf,"NOMBRE:%s \n\n", reg_report_file_name);
-	fprintf(rf, "ciclos(%lld)",ciclos);
+	//fprintf(rf, "ciclos(%lld)",ciclos);
+
+	if (!rf && reg_report_file_name != NULL)
+		return;
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+		fprintf(rf, "consumers_r%d,",i);
+	}
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf, "maxt_cons_r%d,",i);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf, "mint_cons_r%d,",i);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf, "avgt_cons_r%d,",i);
+        }
+	fprintf(rf, "Ciclos");
+	fprintf(rf, "\n");
+	//DATA
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf, "%d,",x86_cpu->core[0].thread[0].reg_file->int_max_time[i]);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf, "%d,",x86_cpu->core[0].thread[0].reg_file->int_min_time[i]);
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+		//if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] != 0)
+		if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] == 0){fprintf(rf,"0,");}
+		else{fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_acum_time[i]/x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);}
+        }
+	fprintf(rf,"%lld",ciclos );
         fclose(rf);
 }
 
