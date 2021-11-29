@@ -81,12 +81,14 @@ struct x86_reg_file_t
 	unsigned long long int *int_last_read;
 	unsigned long long int *int_acum_time;
 	unsigned long long int *int_number_of_reads;
+	unsigned long long int *int_consumers_per_write;
 
 	int *fp_max_time;
         int *fp_min_time;
         unsigned long long int *fp_last_read;
         unsigned long long int *fp_acum_time;
         unsigned long long int *fp_number_of_reads;
+	unsigned long long int *fp_consumers_per_write;
 
 
 		

@@ -1032,6 +1032,9 @@ void x86_cpu_dump_summary(FILE *f)
 	for(int i = 0; i < x86_reg_file_int_size; i++){
                 fprintf(rf, "int_avgt_cons_r%d,",i);
         }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf, "int_cons_per_write_r%d,",i);
+        }
 	//fp
 	for(int i = 0; i < x86_reg_file_fp_size; i++){
                 fprintf(rf, "fp_consumers_r%d,",i);
@@ -1062,6 +1065,9 @@ void x86_cpu_dump_summary(FILE *f)
 		//if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] != 0)
 		if(x86_cpu->core[0].thread[0].reg_file->int_acum_time[i] == 0){fprintf(rf,"0,");}
 		else{fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_acum_time[i]/x86_cpu->core[0].thread[0].reg_file->int_number_of_reads[i]);}
+        }
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_consumers_per_write[i]);
         }
 	//fp
 	for(int i = 0; i < x86_reg_file_fp_size; i++){
