@@ -33,23 +33,25 @@ enum x86_dep_t
 {
 	x86_dep_none = 0,
 
+	x86_dep_es = 1,
+        x86_dep_cs = 2,
+        x86_dep_ss = 3,
+        x86_dep_ds = 4,
+        x86_dep_fs = 5,
+        x86_dep_gs = 6,
+
+
 	/* Integer dependences */
 
-	x86_dep_eax = 1,
-	x86_dep_ecx = 2,
-	x86_dep_edx = 3,
-	x86_dep_ebx = 4,
-	x86_dep_esp = 5,
-	x86_dep_ebp = 6,
-	x86_dep_esi = 7,
-	x86_dep_edi = 8,
+	x86_dep_eax = 7,
+	x86_dep_ecx = 8,
+	x86_dep_edx = 9,
+	x86_dep_ebx = 10,
+	x86_dep_esp = 11,
+	x86_dep_ebp = 12,
+	x86_dep_esi = 13,
+	x86_dep_edi = 14,
 
-	x86_dep_es = 9,
-	x86_dep_cs = 10,
-	x86_dep_ss = 11,
-	x86_dep_ds = 12,
-	x86_dep_fs = 13,
-	x86_dep_gs = 14,
 
 	x86_dep_zps = 15,
 	x86_dep_of = 16,
@@ -61,7 +63,7 @@ enum x86_dep_t
 	x86_dep_ea = 21,  /* Internal - Effective address */
 	x86_dep_data = 22,  /* Internal - Data for load/store */
 
-	x86_dep_int_first = x86_dep_eax,
+	x86_dep_int_first = x86_dep_es,
 	x86_dep_int_last = x86_dep_data,
 	x86_dep_int_count = x86_dep_int_last - x86_dep_int_first + 1,
 
