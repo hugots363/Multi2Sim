@@ -128,7 +128,7 @@ static void x86_reg_file_init_thread(int core, int thread)
 		{
 
 			phreg = x86_reg_file_int_reclaim(core, thread);
-			printf("dep(%d),Reg %d\n",dep,phreg);
+			//printf("dep(%d),Reg %d\n",dep,phreg);
 			fphreg = phreg;
 		}
 		reg_file->int_phreg[phreg].busy++;
@@ -213,7 +213,6 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 	/* Free list */
 	reg_file->int_free_phreg_count = int_size;
 	reg_file->int_free_phreg = xcalloc(int_size, sizeof(int));
-	printf("Int_Size=%d",int_size);
 	for (phreg = 0; phreg < int_size; phreg++)
 		reg_file->int_free_phreg[phreg] = phreg;
 
@@ -522,6 +521,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			//RTM
 			if(phreg > -1 ){
 				reg_file->int_number_of_consumers[phreg]++;
+			
 				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
 
 				//Counting time between accesses
@@ -536,6 +536,8 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 					reg_file->int_number_of_reads[phreg]++;
 				}
 				reg_file->int_last_read[phreg] = ciclos;
+				//Hugo
+				printf("%d,\n",phreg);
 			}
 
 			uop->ph_idep[dep] = phreg;

@@ -90,6 +90,8 @@ struct x86_reg_file_t
         unsigned long long int *fp_number_of_reads;
 	unsigned long long int *fp_consumers_per_write;
 
+	
+
 
 		
 };
