@@ -243,19 +243,23 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 	/*RTM structures*/
 	reg_file->int_number_of_consumers = xcalloc(x86_reg_file_int_size,sizeof(long long int));
 	reg_file->int_total_consumers = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	reg_file->int_consumers_distribution = xcalloc(x86_reg_file_int_size,sizeof(long long int));
 	for(int i = 0; i < x86_reg_file_int_size; i++)
 	{
 		reg_file->int_number_of_consumers[i] = 0;
 		reg_file->int_total_consumers[i] = 0;
+		reg_file->int_consumers_distribution[i] = 0;
 		//printf("%d  ",i);
 	}
 
 	reg_file->fp_number_of_consumers = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
         reg_file->fp_total_consumers = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+	reg_file->fp_consumers_distribution = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
         for(int i = 0; i < x86_reg_file_fp_size; i++)
         {
                 reg_file->fp_number_of_consumers[i] = 0;
                 reg_file->fp_total_consumers[i] = 0;
+		reg_file->fp_consumers_distribution[i] = 0;
                 //printf("%d  ",i);
         }
 
@@ -521,6 +525,13 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			//RTM
 			if(phreg > -1 ){
 				reg_file->int_number_of_consumers[phreg]++;
+				//Counting number of reads between writes
+				if(reg_file->int_number_of_consumers[phreg] > x86_reg_file_int_size -1){
+                                        reg_file->int_consumers_per_write[x86_reg_file_int_size-1]++;
+                                }
+                                else{
+                                        reg_file->int_consumers_per_write[reg_file->int_number_of_consumers[phreg]]++;
+                                }
 			
 				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
 
@@ -537,7 +548,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 				}
 				reg_file->int_last_read[phreg] = ciclos;
 				//Hugo
-				printf("%d,\n",phreg);
+				//printf("%d,\n",phreg);
 			}
 
 			uop->ph_idep[dep] = phreg;
@@ -555,6 +566,14 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			X86_THREAD.rat_fp_reads++;
 
 			//RTM
+			//Counting number of reads between writes
+                        if(reg_file->fp_number_of_consumers[phreg] > x86_reg_file_fp_size -1){                                        
+				reg_file->fp_consumers_per_write[x86_reg_file_fp_size-1]++;
+                       }
+                       else{
+			       reg_file->fp_consumers_per_write[reg_file->fp_number_of_consumers[phreg]]++;
+                       }
+
                         if(phreg > -1 ){
                                 reg_file->fp_number_of_consumers[phreg]++;
                                 //Counting time between accesses
@@ -600,18 +619,16 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			//RTM	
 			if(phreg > -1){
 
+                                reg_file->int_consumers_distribution[reg_file->int_consumers_per_write[phreg]]++;
+				reg_file->int_consumers_per_write[phreg] = 0;
+                               
+
 				if(reg_file->int_number_of_consumers[phreg] < x86_reg_file_int_size)
 				{	
 					reg_file->int_total_consumers[reg_file->int_number_of_consumers[phreg]]++;
 				}
 				else{
 					reg_file->int_total_consumers[x86_reg_file_int_size-1]++;
-				}
-				if(reg_file->int_number_of_consumers[phreg] > x86_reg_file_int_size -1){
-					reg_file->int_consumers_per_write[x86_reg_file_int_size-1]++;
-				}
-				else{
-					reg_file->int_consumers_per_write[reg_file->int_number_of_consumers[phreg]]++;
 				}
 				reg_file->int_number_of_consumers[phreg] = 0;
 				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
@@ -654,6 +671,9 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 
 			//RTM
                         if(phreg > -1){
+
+				reg_file->fp_consumers_distribution[reg_file->fp_consumers_per_write[phreg]]++;
+                                reg_file->fp_consumers_per_write[phreg] = 0;
 
                                 if(reg_file->fp_number_of_consumers[phreg] < x86_reg_file_fp_size)
                                 {
