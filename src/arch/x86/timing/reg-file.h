@@ -75,6 +75,8 @@ struct x86_reg_file_t
         long long int *int_total_consumers;
 	int *fp_number_of_consumers;
         long long int *fp_total_consumers;
+	long long int int_q_flags;
+	long long int fp_q_flags;
 	//Measuring time between consumptions
 	int *int_max_time;
 	int *int_min_time;

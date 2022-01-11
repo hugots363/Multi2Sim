@@ -1071,7 +1071,7 @@ void x86_cpu_dump_summary(FILE *f)
         }
 	for(int i = 0; i < x86_reg_file_int_size; i++){
                 fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_consumers_distribution[i]);
-		printf("(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_consumers_distribution[i]);
+		//printf("(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_consumers_distribution[i]);
         }
 	//fp
 	for(int i = 0; i < x86_reg_file_fp_size; i++){
@@ -1089,8 +1089,18 @@ void x86_cpu_dump_summary(FILE *f)
         }
 	for(int i = 0; i < x86_reg_file_fp_size; i++){
                 fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->fp_consumers_distribution[i]);
-		 printf("fp(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->fp_consumers_distribution[i]);
+		 //printf("fp(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->fp_consumers_distribution[i]);
         }
+	//printf("int_flags(%lld)\n",x86_cpu->core[0].thread[0].reg_file->int_q_flags);
+	//printf("fp_flags(%lld)\n",x86_cpu->core[0].thread[0].reg_file->fp_q_flags);
+	/*
+	for(int i = 0; i < x86_reg_file_int_size; i++){
+                 printf("int(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_consumers_per_write[i]);
+        }
+	for(int i = 0; i < x86_reg_file_fp_size; i++){
+                 printf("fp(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->fp_consumers_per_write[i]);
+        }
+	*/
 	fprintf(rf,"%lld",ciclos );
         fclose(rf);
 }
