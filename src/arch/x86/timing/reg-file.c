@@ -244,6 +244,9 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 	reg_file->int_number_of_consumers = xcalloc(x86_reg_file_int_size,sizeof(long long int));
 	reg_file->int_total_consumers = xcalloc(x86_reg_file_int_size,sizeof(long long int));
 	reg_file->int_consumers_distribution = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	reg_file->int_notConsumers_distribution = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	reg_file->int_last_write = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	reg_file->int_time_wtr = xcalloc(x86_reg_file_int_size,sizeof(long long int));
 	reg_file->int_q_flags = 0;
 	reg_file->fp_q_flags = 0;
 	for(int i = 0; i < x86_reg_file_int_size; i++)
@@ -251,6 +254,9 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 		reg_file->int_number_of_consumers[i] = 0;
 		reg_file->int_total_consumers[i] = 0;
 		reg_file->int_consumers_distribution[i] = 0;
+		reg_file->int_last_write[i] = -1;
+		reg_file->int_time_wtr[i] = 0;
+		reg_file->int_notConsumers_distribution[i] = 0;
 		//printf("%d  ",i);
 	}
 
@@ -271,13 +277,14 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
         reg_file->int_acum_time = xcalloc(x86_reg_file_int_size,sizeof(long long int));
         reg_file->int_number_of_reads = xcalloc(x86_reg_file_int_size,sizeof(long long int));
 	reg_file->int_consumers_per_write = xcalloc(x86_reg_file_int_size,sizeof(long long int));
+	reg_file->int_notConsumers_per_write = xcalloc(x86_reg_file_int_size,sizeof(long long int));
 
 	reg_file->fp_max_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
         reg_file->fp_min_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
         reg_file->fp_last_read = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
         reg_file->fp_acum_time = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
         reg_file->fp_number_of_reads = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
-	reg_file->fp_consumers_per_write = xcalloc(x86_reg_file_fp_size,sizeof(long long int));
+	reg_file->fp_consumers_per_write = xcalloc(x86_reg_file_fp_size,sizeof(long long int)); 
 
 	for(int i = 0; i < x86_reg_file_int_size; i++)
         {
@@ -287,6 +294,7 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 		reg_file->int_acum_time[i] = 0;
 		reg_file->int_number_of_reads[i] = 0;
 		reg_file->int_consumers_per_write[i] = -1;
+		reg_file->int_notConsumers_per_write[i] = -1;
 
         }
 
@@ -528,12 +536,16 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			if(phreg > -1 ){
 				reg_file->int_number_of_consumers[phreg]++;
 				//Counting number of reads between writes
-				if(reg_file->int_consumers_per_write[phreg] != -1){	
-                                	reg_file->int_consumers_per_write[phreg]++;
+				if(reg_file->int_consumers_per_write[phreg] != -1){
+					if(reg_file->int_phreg[phreg].pending){
+						reg_file->int_notConsumers_per_write[phreg]++;
+					}
+					else{
+						reg_file->int_consumers_per_write[phreg]++;
+					}	
 				}
-				else{
-					reg_file->int_q_flags++;
-				}
+			}
+			
 				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
 
 				//Counting time between accesses
@@ -548,9 +560,19 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 					reg_file->int_number_of_reads[phreg]++;
 				}
 				reg_file->int_last_read[phreg] = ciclos;
+				//Time between write and first read
+				if(reg_file->int_last_write[phreg] != -1){
+					if((ciclos - reg_file->int_last_write[phreg]) < x86_reg_file_int_size){
+						reg_file->int_time_wtr[ciclos - reg_file->int_last_write[phreg]]++;
+					}
+					else{
+						reg_file->int_time_wtr[ x86_reg_file_int_size-1]++;
+					}
+					reg_file->int_last_write[phreg] = -1;
+				}
 				//Hugo
 				//printf("%d,\n",phreg);
-			}
+			
 
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_int_reads++;
@@ -570,6 +592,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			//Counting number of reads between writes
 			
 			if(reg_file->fp_consumers_per_write[phreg] != -1){
+
                         	reg_file->fp_consumers_per_write[phreg]++;
                         }
 			else{
@@ -587,6 +610,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
                                         reg_file->fp_number_of_reads[phreg]++;
                                 }
                                 reg_file->fp_last_read[phreg] = ciclos;
+
                         }
 			//end RTM
 		}
@@ -622,16 +646,29 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			//RTM	
 			if(phreg > -1){
 				if(reg_file->int_consumers_per_write[phreg] != -1){
-                                        if( (reg_file->int_consumers_per_write[phreg] <  x86_reg_file_int_size)){
-                                                reg_file->int_consumers_distribution[reg_file->int_consumers_per_write[phreg]]++;
-						//if(reg_file->int_consumers_per_write[phreg] == 0){printf("0LECT(%d)\n",phreg);}
-                                        }
-                                        else{
-                                                reg_file->int_consumers_distribution[x86_reg_file_int_size -1]++;
-                                        }
-                                }
+					if(reg_file->int_consumers_per_write[phreg] != 0){
+                                        	if( (reg_file->int_consumers_per_write[phreg] <  x86_reg_file_int_size)){
+                                                	reg_file->int_consumers_distribution[reg_file->int_consumers_per_write[phreg]]++;
+							//if(reg_file->int_consumers_per_write[phreg] == 0){printf("0LECT(%d)\n",phreg);}
+                                        	}
+                                        	else{
+                                                	reg_file->int_consumers_distribution[x86_reg_file_int_size -1]++;
+                                        	}
+					}
+					else if(reg_file->int_notConsumers_per_write[phreg] != 0){
+						if( (reg_file->int_notConsumers_per_write[phreg] <  x86_reg_file_int_size)){
+        	                                        reg_file->int_notConsumers_distribution[reg_file->int_notConsumers_per_write[phreg]]++;
+                	                        }
+                        	                else{
+                                	                reg_file->int_notConsumers_distribution[x86_reg_file_int_size -1]++;
+                                        	}
+                                	}
+					else{
+						reg_file->int_consumers_distribution[0]++;
+					}
+				}
 				reg_file->int_consumers_per_write[phreg] = 0;
-                               
+				reg_file->int_notConsumers_per_write[phreg] = 0;
 
 				if(reg_file->int_number_of_consumers[phreg] < x86_reg_file_int_size)
 				{	
@@ -644,7 +681,8 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
 
 				//Reset of times
-				reg_file->int_last_read[phreg] = ciclos;  
+				reg_file->int_last_read[phreg] = ciclos; 
+			        reg_file->int_last_write[phreg] = ciclos;	
 			}
 			
 			//end
