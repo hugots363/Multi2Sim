@@ -1078,24 +1078,27 @@ void x86_cpu_dump_summary(FILE *f)
 	long long int total1 = 0;
 	for(int i = 0; i < x86_reg_file_int_size; i++){
                 fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_consumers_distribution[i]);
-		printf("(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_consumers_distribution[i]);
+		//printf("(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_consumers_distribution[i]);
 		total1+= x86_cpu->core[0].thread[0].reg_file->int_consumers_distribution[i];
         }
-	printf("Total_c(%lld)\n",total1);
+	//printf("Total_c(%lld)\n",total1);
 	long long int total2 = 0;
 	for(int i = 0; i < x86_reg_file_int_size; i++){
                 fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->int_notConsumers_distribution[i]);
-                printf("(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_notConsumers_distribution[i]);
+                //printf("(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_notConsumers_distribution[i]);
 		total2+= x86_cpu->core[0].thread[0].reg_file->int_notConsumers_distribution[i];
         }
-	printf("Total_nc(%lld)\n",total2);
+	//printf("Total_nc(%lld)\n",total2);
+	/*
 	for(int i = 0; i < x86_reg_file_int_size; i++){
                 printf("(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_total_consumers[i]);
         }
+
 	for(int i = 0; i < x86_reg_file_int_size; i++){
-                printf("(%d)NotDiscrimined(%lld)\n",i,x86_cpu->core[0].thread[0].reg_file->int_time_wtr[i]);
+                //printf("(%d)NotDiscrimined(%lld)\n",i,x86_cpu->core[0].thread[0].reg_file->int_time_wtr[i]);
                 //printf("(%d)%lld\n",i,x86_cpu->core[0].thread[0].reg_file->int_time_wtr[i]);
         }
+	*/
 	//fp
 	for(int i = 0; i < x86_reg_file_fp_size; i++){
                 fprintf(rf, "%lld,",x86_cpu->core[0].thread[0].reg_file->fp_number_of_reads[i]);

@@ -39,7 +39,17 @@ int x86_reg_file_xmm_size = 40;  /* Per-thread xmm register file size */
 
 
 /* Private variables and functions */
+//int x86_int_uinsts[22] = {0,1,2,3,4,5,6,7,8,9,10,11,12,52,53,54,55,56,57,58,59,60};
+/*
+static int x86_int_opcode(int opcode)
+{
+	for (int i =0; i < 22;i++){
+		if(opcode == x86_int_uinsts[i]){return 1;}
+	}
+	return 0;	
 
+} 
+*/
 /* maximum number of registers allowed per thread */
 static int x86_reg_file_int_local_size;
 static int x86_reg_file_fp_local_size;
@@ -512,6 +522,8 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 	int thread = uop->thread;
 	struct x86_reg_file_t *reg_file = X86_THREAD.reg_file;
 
+	//int uop_int = x86_int_opcode(uop->uinst->opcode); 
+
 	/* Update floating-point top of stack */
 	if (uop->uinst->opcode == x86_uinst_fp_pop)
 	{
@@ -523,28 +535,33 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		/* Push floating-point stack */
 		reg_file->fp_top_of_stack = (reg_file->fp_top_of_stack + 7) % 8;
 	}
-
+	//Printing RTM trace
+	//if(uop_int){
+		//printf("[%d]%s,R[",uop->uinst->opcode,x86_uinst_info[uop->uinst->opcode].name);
+		printf("\n%d | ",uop->uinst->opcode);
+	//}
 	/* Rename input int/FP/XMM registers */
 	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
 	{
 		loreg = uop->uinst->idep[dep];
 		if (X86_DEP_IS_INT_REG(loreg))
 		{
+			//printf("i");
 			phreg = reg_file->int_rat[loreg - x86_dep_int_first];
 
 			//RTM
-			if(phreg > -1 ){
+			//if(phreg > -1 ){
 				reg_file->int_number_of_consumers[phreg]++;
 				//Counting number of reads between writes
-				if(reg_file->int_consumers_per_write[phreg] != -1){
-					if(reg_file->int_phreg[phreg].pending){
-						reg_file->int_notConsumers_per_write[phreg]++;
-					}
-					else{
-						reg_file->int_consumers_per_write[phreg]++;
-					}	
+				if(reg_file->int_phreg[phreg].pending){
+					printf("C%d ",phreg);
+					//reg_file->int_notConsumers_per_write[phreg]++;
 				}
-			}
+				else{
+					printf("R%d ",phreg);
+					//reg_file->int_consumers_per_write[phreg]++;
+				}	
+			//}
 			
 				//printf(" ph:%d(%d)", phreg, reg_file->int_number_of_consumers[phreg]);
 
@@ -579,6 +596,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
 		{
+			printf("%df ",dep);
 			/* Convert to top-of-stack relative */
 			streg = (loreg - x86_dep_fp_first + reg_file->fp_top_of_stack) % 8 + x86_dep_fp_first;
 			assert(X86_DEP_IS_FP_REG(streg));
@@ -616,6 +634,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		}
 		else if (X86_DEP_IS_XMM_REG(loreg))
 		{
+			printf("%dx ",dep);
 			phreg = reg_file->xmm_rat[loreg - x86_dep_xmm_first];
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_xmm_reads++;
@@ -629,22 +648,30 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 	/* Rename output int/FP/XMM registers (not flags) */
 	flag_phreg = -1;
 	flag_count = 0;
+	//if(uop_int){printf(" | ");}
+	printf("| ");
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
 	{
 		loreg = uop->uinst->odep[dep];
 		if (X86_DEP_IS_FLAG(loreg))
 		{
+			//printf("%dfl ",dep);
 			/* Record a new flag */
 			flag_count++;
 			//printf("FLAG1\n");
 		}
 		else if (X86_DEP_IS_INT_REG(loreg))
 		{
+			//printf("i");
+			//printf("l%d-",loreg);
 			/* Reclaim a free integer register */
 			phreg = x86_reg_file_int_reclaim(core, thread);
 
-			//RTM	
+			//RTM
+			//if(uop_int){printf("%d ",phreg);}
+			printf("%d ",phreg);
 			if(phreg > -1){
+				//if(uop_int){printf("%d ",phreg);}	
 				if(reg_file->int_consumers_per_write[phreg] != -1){
 					if(reg_file->int_consumers_per_write[phreg] != 0){
                                         	if( (reg_file->int_consumers_per_write[phreg] <  x86_reg_file_int_size)){
@@ -701,6 +728,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
 		{
+			printf("%df ",dep);
 			/* Convert to top-of-stack relative */
 			streg = (loreg - x86_dep_fp_first + reg_file->fp_top_of_stack) % 8 + x86_dep_fp_first;
 			assert(X86_DEP_IS_FP_REG(streg));
@@ -753,6 +781,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		}
 		else if (X86_DEP_IS_XMM_REG(loreg))
 		{
+			printf("%dx ",dep);
 			/* Reclaim a free xmm register */
 			phreg = x86_reg_file_xmm_reclaim(core, thread);
 			reg_file->xmm_phreg[phreg].busy++;
@@ -792,6 +821,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			reg_file->int_rat[loreg - x86_dep_int_first] = flag_phreg;
 		}
 	}
+	 //if(uop_int){printf("\n");}
 }
 
 
