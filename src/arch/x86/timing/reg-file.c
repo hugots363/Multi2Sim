@@ -25,7 +25,7 @@
 #include "cpu.h"
 #include "reg-file.h"
 #include "rob.h"
-
+#include "src/arch/x86/emu/context.h"
 
 /* Global variables */
 
@@ -452,6 +452,8 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		/* Push floating-point stack */
 		reg_file->fp_top_of_stack = (reg_file->fp_top_of_stack + 7) % 8;
 	}
+	//printf("\n%d %s %x | ",uop->uinst->opcode, x86_uinst_info[uop->uinst->opcode].name, uop->ctx->inst.opcode);
+	printf("\n%d | ",uop->uinst->opcode);
 
 	/* Rename input int/FP/XMM registers */
 	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
@@ -460,6 +462,12 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		if (X86_DEP_IS_INT_REG(loreg))
 		{
 			phreg = reg_file->int_rat[loreg - x86_dep_int_first];
+			if(reg_file->int_phreg[phreg].pending){
+				printf("C%d ",phreg);
+			}
+			else{
+				printf("R%d ",phreg);
+			}
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_int_reads++;
 		}
@@ -471,12 +479,14 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 
 			/* Rename it. */
 			phreg = reg_file->fp_rat[streg - x86_dep_fp_first];
+			//printf("%d ",phreg);
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_fp_reads++;
 		}
 		else if (X86_DEP_IS_XMM_REG(loreg))
 		{
 			phreg = reg_file->xmm_rat[loreg - x86_dep_xmm_first];
+			//printf("%d ",phreg);
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_xmm_reads++;
 		}
@@ -484,8 +494,9 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		{
 			uop->ph_idep[dep] = -1;
 		}
-	}
 
+	}
+	printf("| ");
 	/* Rename output int/FP/XMM registers (not flags) */
 	flag_phreg = -1;
 	flag_count = 0;
@@ -501,6 +512,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		{
 			/* Reclaim a free integer register */
 			phreg = x86_reg_file_int_reclaim(core, thread);
+			printf("%d ",phreg);
 			reg_file->int_phreg[phreg].busy++;
 			reg_file->int_phreg[phreg].pending = 1;
 			ophreg = reg_file->int_rat[loreg - x86_dep_int_first];
