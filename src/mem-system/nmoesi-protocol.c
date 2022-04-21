@@ -5101,6 +5101,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		/* Unlock, reply_size is the data of the size of the requester's block. */
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 
+
 		/* There is no more work for this stack */
 		if (stack->background)
 		{
