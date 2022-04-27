@@ -706,7 +706,7 @@ void mem_system_dump_report(void)
 	fprintf(fh, "Ciclos pen ROB propios,");
 	//fprintf(fh, ",%.3f", dispatch_stall_int[i]);	
 	fprintf(fh,"Ciclos de ejecucion,");
-	if(mod->TapeCache == 0){	
+	if(mod->RTM){	
 		fprintf(fh, "Hits-RTM-0,");
         	fprintf(fh, "Hits-RTM-1,");
         	fprintf(fh, "Hits-RTM-2,");
@@ -717,8 +717,9 @@ void mem_system_dump_report(void)
 		}
 		
 	}
-	fprintf(fh, "Cycles-L1D+L2,");
-	fprintf(fh, "Apariciones-L1+L2\n");
+	fprintf(fh,"\n");
+	//fprintf(fh, "Cycles-L1D+L2,");
+	//fprintf(fh, "Apariciones-L1+L2\n");
 	
 	//DATA
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
@@ -848,12 +849,12 @@ void mem_system_dump_report(void)
 
 	
 	//fprintf(fh, "%.3f,", stall_rob_aux);
-	fprintf(fh,"%llu,",rob_mem_cont );
-	fprintf(fh,"%llu,", ciclos_tot - cycles_after_reset);
+	fprintf(fh,"%llu,",rob_mem_cont ); //Ciclos pen ROB propios
+	fprintf(fh,"%llu,", ciclos_tot - cycles_after_reset); //Ciclos de ejecucion
 	if(mod->RTM){
 		fprintf(fh,"%llu,",hit_0 );
         	fprintf(fh,"%llu,",hit_1 );
-        	fprintf(fh,"%llu,",hit_2 );
+        	fprintf(fh,"%llu\n",hit_2 );
 	}
 	
 	sum_pen = 0;
@@ -870,8 +871,8 @@ void mem_system_dump_report(void)
 		}
 	}
 	
-	fprintf(fh,"%llu,",acum_cycles);
-	fprintf(fh,"%llu\n",acum_cycles_times );	
+	//fprintf(fh,"%llu,",acum_cycles);
+	//fprintf(fh,"%llu\n",acum_cycles_times );	
 	//printf("Dades Hugo-> Acc:%d,hit:%d,miss:%d\n",accesses_n,hits_n,misses_n); 
 	
 	/* Done */
